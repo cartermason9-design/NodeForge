@@ -57,6 +57,12 @@
         user-select: none;
       }
 
+      body.panning-canvas {
+        cursor: grabbing;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
       #topbar {
         height: 36px;
         background: linear-gradient(#2b2b30, #27272b);
@@ -133,12 +139,17 @@
         grid-template-columns: 240px 1fr 420px;
       }
 
+      #main.preview-hidden {
+        grid-template-columns: 240px 1fr;
+      }
+
       #sidebar {
         background: linear-gradient(#28282d, #242429);
         border-right: 1px solid var(--line2);
         display: flex;
         flex-direction: column;
         min-width: 0;
+        min-height: 0;
       }
 
       .sidebar-header {
@@ -158,9 +169,11 @@
         flex-direction: column;
         gap: 8px;
         overflow: visible;
+        flex: 0 0 auto;
       }
 
       #layer-panel {
+        flex: 1 1 auto;
         padding: 10px;
         border-top: 1px solid #1b1c21;
         display: flex;
@@ -168,6 +181,13 @@
         gap: 8px;
         min-height: 0;
         overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      #layer-panel::-webkit-scrollbar {
+        width: 0;
+        height: 0;
       }
 
       .layer-panel-header {
@@ -201,6 +221,39 @@
         align-items: center;
         gap: 6px;
         margin: 0;
+      }
+
+      .layer-toggle-btn {
+        width: 14px;
+        height: 14px;
+        border: none;
+        background: transparent;
+        color: inherit;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        cursor: pointer;
+        flex: 0 0 auto;
+        opacity: 0.8;
+      }
+
+      .layer-toggle-btn:hover {
+        opacity: 1;
+      }
+
+      .layer-toggle-btn.placeholder {
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .layer-toggle-icon {
+        width: 10px;
+        height: 10px;
+        transition: transform 120ms ease;
+      }
+
+      .layer-toggle-btn.collapsed .layer-toggle-icon {
+        transform: rotate(-90deg);
       }
 
       .layer-item:hover {
@@ -349,6 +402,7 @@
         height: 2000px;
         left: 0;
         top: 0;
+        transform-origin: 0 0;
       }
 
       #connections {
@@ -366,6 +420,10 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
+      }
+
+      #main.preview-hidden #preview-panel {
+        display: none;
       }
 
       #preview-top {
@@ -829,6 +887,38 @@
             <circle cx="12" cy="12" r="3" />
           </svg>
         </button>
+        <button class="icon-btn" id="togglePreviewBtn" title="Hide preview" aria-label="Hide preview">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+        <button class="icon-btn" id="resetZoomBtn" title="Reset zoom" aria-label="Reset zoom">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+            <path d="M8 11h6"></path>
+            <path d="M11 8v6"></path>
+          </svg>
+        </button>
       </div>
 
       <div class="top-divider"></div>
@@ -931,11 +1021,15 @@
     </div>
 
     <script>
+      const mainEl = document.getElementById("main");
+      const canvasWrap = document.getElementById("canvas-wrap");
       const canvas = document.getElementById("canvas");
       const connectionsSvg = document.getElementById("connections");
       const preview = document.getElementById("preview");
       const statusEl = document.getElementById("status");
       const layerList = document.getElementById("layer-list");
+      const togglePreviewBtn = document.getElementById("togglePreviewBtn");
+      const resetZoomBtn = document.getElementById("resetZoomBtn");
 
       let nodeIdCounter = 1;
       let layerIdCounter = 1;
@@ -943,8 +1037,11 @@
       let activeLayerId = null;
       let activeInteractionKind = null;
       let copiedNodePayload = null;
+      let previewVisible = true;
+      let viewport = { x: 0, y: 0, scale: 1 };
 
       const layers = [];
+      const collapsedLayerIds = new Set();
 
       const graph = {
         nodes: [],
@@ -1051,6 +1148,131 @@
         `;
       }
 
+      function getLayerToggleSvg() {
+        return `
+          <svg class="layer-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        `;
+      }
+
+      function syncPreviewVisibility() {
+        mainEl.classList.toggle("preview-hidden", !previewVisible);
+        togglePreviewBtn.title = previewVisible ? "Hide preview" : "Show preview";
+        togglePreviewBtn.setAttribute(
+          "aria-label",
+          previewVisible ? "Hide preview" : "Show preview"
+        );
+        togglePreviewBtn.innerHTML = previewVisible
+          ? `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          `
+          : `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+              <circle cx="12" cy="12" r="3" />
+              <path d="M4 4 20 20" />
+            </svg>
+          `;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function applyViewportTransform() {
+        canvas.style.left = `${viewport.x}px`;
+        canvas.style.top = `${viewport.y}px`;
+        canvas.style.zoom = String(viewport.scale);
+        drawConnections();
+      }
+
+      function getVisibleWorldRect() {
+        const rect = canvasWrap.getBoundingClientRect();
+        const left = (-viewport.x) / viewport.scale;
+        const top = (-viewport.y) / viewport.scale;
+        const width = rect.width / viewport.scale;
+        const height = rect.height / viewport.scale;
+        return { left, top, width, height };
+      }
+
+      function getNodeSpawnSize(type) {
+        return {
+          buttonsc: { width: 460, height: 720 },
+          button: { width: 260, height: 340 },
+          background: { width: 260, height: 360 },
+          color: { width: 260, height: 380 },
+          stroke: { width: 260, height: 380 },
+          textstroke: { width: 260, height: 300 },
+          shadow: { width: 260, height: 260 },
+          radius: { width: 260, height: 260 },
+        }[type] || { width: 260, height: 240 };
+      }
+
+      function setupCanvasViewport() {
+        let panning = false;
+        let startX = 0;
+        let startY = 0;
+        let originX = 0;
+        let originY = 0;
+
+        canvasWrap.addEventListener("mousedown", (e) => {
+          if (e.button !== 0) {
+            return;
+          }
+          if (
+            e.target.closest(".node") ||
+            e.target.closest(".port") ||
+            e.target.closest("input, select, button, textarea")
+          ) {
+            return;
+          }
+
+          panning = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          originX = viewport.x;
+          originY = viewport.y;
+          document.body.classList.add("panning-canvas");
+          e.preventDefault();
+        });
+
+        window.addEventListener("mousemove", (e) => {
+          if (!panning) {
+            return;
+          }
+          viewport.x = originX + (e.clientX - startX);
+          viewport.y = originY + (e.clientY - startY);
+          applyViewportTransform();
+        });
+
+        window.addEventListener("mouseup", () => {
+          if (!panning) {
+            return;
+          }
+          panning = false;
+          document.body.classList.remove("panning-canvas");
+        });
+
+        canvasWrap.addEventListener(
+          "wheel",
+          (e) => {
+            if (e.target.closest("input, select, textarea")) {
+              return;
+            }
+            e.preventDefault();
+
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            viewport.scale = clamp(viewport.scale * zoomFactor, 0.35, 2.2);
+            applyViewportTransform();
+          },
+          { passive: false }
+        );
+      }
+
       function updateLayerControls() {
         const layerItems = [...layers];
         if (graph.nodes.some((n) => n.type === "background")) {
@@ -1066,8 +1288,18 @@
           .map((layer) => {
             const isBaseActive =
               layer.id === activeLayerId && (activeInteractionKind || null) === null;
+            const isCollapsed = collapsedLayerIds.has(layer.id);
             const baseRow = `
               <div class="layer-item ${isBaseActive ? "active" : ""}" role="button" tabindex="0" data-layer-id="${layer.id}">
+                <button
+                  class="layer-toggle-btn ${layer.id === "background" ? "placeholder" : ""} ${isCollapsed ? "collapsed" : ""}"
+                  type="button"
+                  data-toggle-layer-id="${layer.id}"
+                  aria-label="${isCollapsed ? "Expand sublayers" : "Collapse sublayers"}"
+                  title="${isCollapsed ? "Expand sublayers" : "Collapse sublayers"}"
+                >
+                  ${getLayerToggleSvg()}
+                </button>
                 ${getLayerIcon(layer)}
                 <span class="layer-name">${escapeHtml(getLayerLabel(layer))}</span>
                 <button class="layer-copy-btn" type="button" data-copy-layer-id="${layer.id}" title="Copy layer" aria-label="Copy layer">
@@ -1077,6 +1309,10 @@
             `;
 
             if (layer.id === "background") {
+              return baseRow;
+            }
+
+            if (isCollapsed) {
               return baseRow;
             }
 
@@ -2810,8 +3046,8 @@
             return;
           }
 
-          node.x = originX + (e.clientX - startX);
-          node.y = originY + (e.clientY - startY);
+          node.x = originX + (e.clientX - startX) / viewport.scale;
+          node.y = originY + (e.clientY - startY) / viewport.scale;
           el.style.left = node.x + "px";
           el.style.top = node.y + "px";
           drawConnections();
@@ -3003,21 +3239,16 @@
       }
 
       function getPortCenter(port) {
-        const canvasRect = canvas.getBoundingClientRect();
         const r = port.getBoundingClientRect();
-
-        return {
-          x: r.left - canvasRect.left + r.width / 2,
-          y: r.top - canvasRect.top + r.height / 2,
-        };
+        return getCanvasPoint(r.left + r.width / 2, r.top + r.height / 2);
       }
 
       function getCanvasPoint(clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
+        const rect = canvasWrap.getBoundingClientRect();
 
         return {
-          x: clientX - rect.left,
-          y: clientY - rect.top,
+          x: (clientX - rect.left - viewport.x) / viewport.scale,
+          y: (clientY - rect.top - viewport.y) / viewport.scale,
         };
       }
 
@@ -3122,6 +3353,7 @@
             const toNode = graph.nodes.find((n) => n.id === c.toNodeId);
             return fromNode && toNode;
           });
+          collapsedLayerIds.delete(node.layerId);
           const layerIndex = layers.findIndex((layer) => layer.id === node.layerId);
           if (layerIndex >= 0) {
             layers.splice(layerIndex, 1);
@@ -3501,16 +3733,31 @@
           radius: { x: 340, y: 1180 },
           background: { x: 340, y: 160 },
         }[type] || { x: 120, y: 120 };
-
-        const wrap = document.getElementById("canvas-wrap");
-        const maxX = Math.max(20, wrap.clientWidth - 260);
-        const maxY = Math.max(20, wrap.clientHeight - 360);
-        const nextX = base.x + typeCount * 30;
-        const nextY = base.y + typeCount * 30;
+        const visible = getVisibleWorldRect();
+        const spawnSize = getNodeSpawnSize(type);
+        const visiblePadding = 24;
+        const centerX = visible.left + visible.width / 2;
+        const centerY = visible.top + visible.height / 2;
+        const nextX = centerX - spawnSize.width / 2 + (base.x % 40) + typeCount * 24;
+        const nextY = centerY - spawnSize.height / 2 + (base.y % 40) + typeCount * 24;
+        const minVisibleX = visible.left + visiblePadding;
+        const minVisibleY = visible.top + visiblePadding;
+        const maxVisibleX = visible.left + visible.width - spawnSize.width - visiblePadding;
+        const maxVisibleY = visible.top + visible.height - spawnSize.height - visiblePadding;
+        const maxCanvasX = 3000 - spawnSize.width - 20;
+        const maxCanvasY = 2000 - spawnSize.height - 20;
 
         return {
-          x: Math.min(nextX, maxX),
-          y: Math.min(nextY, maxY),
+          x: clamp(
+            clamp(nextX, minVisibleX, Math.max(minVisibleX, maxVisibleX)),
+            20,
+            Math.max(20, maxCanvasX)
+          ),
+          y: clamp(
+            clamp(nextY, minVisibleY, Math.max(minVisibleY, maxVisibleY)),
+            20,
+            Math.max(20, maxCanvasY)
+          ),
         };
       }
 
@@ -3560,6 +3807,20 @@
         }
 
         layerList.addEventListener("click", (e) => {
+          const toggleBtn = e.target.closest("[data-toggle-layer-id]");
+          if (toggleBtn) {
+            e.stopPropagation();
+            const layerId = toggleBtn.dataset.toggleLayerId;
+            if (layerId && layerId !== "background") {
+              if (collapsedLayerIds.has(layerId)) {
+                collapsedLayerIds.delete(layerId);
+              } else {
+                collapsedLayerIds.add(layerId);
+              }
+              updateLayerControls();
+            }
+            return;
+          }
           const copyBtn = e.target.closest("[data-copy-layer-id]");
           if (copyBtn) {
             e.stopPropagation();
@@ -3598,6 +3859,7 @@
         nodeIdCounter = 1;
         layerIdCounter = 1;
         layers.length = 0;
+        collapsedLayerIds.clear();
         activeLayerId = null;
         copiedNodePayload = null;
 
@@ -3613,10 +3875,21 @@
       document.getElementById("resetBtn").addEventListener("click", resetGraph);
 
       document.getElementById("centerBtn").addEventListener("click", () => {
-        const wrap = document.getElementById("canvas-wrap");
-        wrap.scrollLeft = 0;
-        wrap.scrollTop = 0;
+        viewport = { x: 0, y: 0, scale: 1 };
+        applyViewportTransform();
         showStatus("Centered");
+      });
+
+      togglePreviewBtn.addEventListener("click", () => {
+        previewVisible = !previewVisible;
+        syncPreviewVisibility();
+        showStatus(previewVisible ? "Preview shown" : "Preview hidden");
+      });
+
+      resetZoomBtn.addEventListener("click", () => {
+        viewport.scale = 1;
+        applyViewportTransform();
+        showStatus("Zoom reset");
       });
 
       window.addEventListener("keydown", (e) => {
@@ -3641,6 +3914,9 @@
 
       resetGraph();
       setupSidebar();
+      setupCanvasViewport();
+      syncPreviewVisibility();
+      applyViewportTransform();
     </script>
   </body>
 </html>
