@@ -1,0 +1,3646 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Node Web Engine - 5 Node Prototype</title>
+    <style>
+      :root {
+        --bg: #1b1b1d;
+        --bg2: #202024;
+        --panel: #2a2a2e;
+        --panel2: #313137;
+        --panel3: #37373d;
+        --line: #111214;
+        --line2: #000;
+        --text: #e7e7ea;
+        --muted: #9ea1a8;
+        --accent: #4d8cff;
+        --accent2: #7aa6ff;
+        --green: #4aa964;
+        --orange: #d48b42;
+        --purple: #8971ff;
+        --pink: #d85f95;
+        --wire: #85b0ff;
+        --field: #232329;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body,
+      #root {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Segoe UI, Inter, Roboto, Arial, sans-serif;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+
+      body.connecting-wire,
+      body.connecting-wire .node,
+      body.connecting-wire .node-header,
+      body.connecting-wire .node-body,
+      body.connecting-wire .port-row,
+      body.connecting-wire .field-label,
+      body.connecting-wire .port-label {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      #topbar {
+        height: 36px;
+        background: linear-gradient(#2b2b30, #27272b);
+        border-bottom: 1px solid var(--line2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 8px;
+        flex-shrink: 0;
+      }
+
+      .top-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .top-divider {
+        width: 1px;
+        height: 18px;
+        background: #121316;
+        margin: 0 4px;
+      }
+
+      .icon-btn {
+        width: 28px;
+        height: 28px;
+        border: 1px solid #15161a;
+        background: linear-gradient(#3a3a40, #303036);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #f4f4f6;
+        padding: 0;
+      }
+
+      .icon-btn:hover {
+        filter: brightness(1.08);
+      }
+
+      .icon-btn:active {
+        transform: translateY(1px);
+      }
+
+      .top-select {
+        height: 26px;
+        background: #000;
+        color: var(--text);
+        border: 1px solid #15161a;
+        border-radius: 4px;
+        padding: 0 8px;
+        outline: none;
+        color-scheme: dark;
+      }
+
+      .top-select option,
+      .select-input option {
+        background: #000;
+        color: var(--text);
+      }
+
+      .top-title {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.2px;
+      }
+
+      #main {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 240px 1fr 420px;
+      }
+
+      #sidebar {
+        background: linear-gradient(#28282d, #242429);
+        border-right: 1px solid var(--line2);
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .sidebar-header {
+        height: 34px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        font-size: 12px;
+        color: #cfd2d9;
+        letter-spacing: 0.25px;
+      }
+
+      #node-list {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow: visible;
+      }
+
+      #layer-panel {
+        padding: 10px;
+        border-top: 1px solid #1b1c21;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .layer-panel-header {
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.2px;
+      }
+
+      .layer-empty {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 6px 2px;
+      }
+
+      .layer-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .layer-item {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        color: #d8dbe2;
+        border-radius: 2px;
+        padding: 4px 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+      }
+
+      .layer-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .layer-item.active {
+        background: #5b5e65;
+        color: #ffffff;
+      }
+
+      .layer-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+      }
+
+      .layer-icon {
+        width: 12px;
+        height: 12px;
+        flex: 0 0 auto;
+        opacity: 0.92;
+      }
+
+      .layer-copy-btn {
+        width: 18px;
+        height: 18px;
+        border: none;
+        background: transparent;
+        color: inherit;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        cursor: pointer;
+        opacity: 0.72;
+        flex: 0 0 auto;
+      }
+
+      .layer-copy-btn:hover {
+        opacity: 1;
+      }
+
+      .layer-subitem {
+        padding-left: 22px;
+      }
+
+      .layer-branch {
+        width: 12px;
+        height: 12px;
+        border-left: 1px solid rgba(255, 255, 255, 0.22);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+        flex: 0 0 auto;
+        margin-right: 2px;
+      }
+
+      .node-list-item {
+        background: linear-gradient(#37373d, #313137);
+        border: 1px solid #17181c;
+        border-radius: 6px;
+        padding: 8px 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+
+      .node-list-item:hover {
+        filter: brightness(1.07);
+      }
+
+      .mini-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        flex: 0 0 auto;
+      }
+
+      .dot-button {
+        background: var(--green);
+      }
+
+      .dot-buttonsc {
+        background: #4ec78a;
+      }
+
+      .dot-position {
+        background: var(--orange);
+      }
+
+      .dot-scale {
+        background: var(--purple);
+      }
+
+      .dot-color {
+        background: var(--pink);
+      }
+
+      .dot-textcolor {
+        background: #59d0d8;
+      }
+
+      .dot-background {
+        background: #7cb36c;
+      }
+
+      .dot-stroke {
+        background: #f0c36a;
+      }
+
+      .dot-textstroke {
+        background: #76c7ff;
+      }
+
+      .dot-shadow {
+        background: #8a93b8;
+      }
+
+      .dot-radius {
+        background: #9ae27d;
+      }
+
+      #center {
+        position: relative;
+        min-width: 0;
+        background: radial-gradient(
+              circle at 1px 1px,
+              rgba(110, 120, 140, 0.18) 1px,
+              transparent 1.2px
+            )
+            0 0 / 24px 24px,
+          linear-gradient(#1b1b1d, #1a1a1c);
+      }
+
+      #canvas-wrap {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      #canvas {
+        position: absolute;
+        width: 3000px;
+        height: 2000px;
+        left: 0;
+        top: 0;
+      }
+
+      #connections {
+        position: absolute;
+        inset: 0;
+        width: 3000px;
+        height: 2000px;
+        pointer-events: none;
+        overflow: visible;
+      }
+
+      #preview-panel {
+        background: linear-gradient(#27272c, #242429);
+        border-left: 1px solid var(--line2);
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      #preview-top {
+        height: 34px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        font-size: 12px;
+        color: #cfd2d9;
+      }
+
+      #preview-wrap {
+        flex: 1;
+        min-height: 0;
+        background: #d9dce2;
+        padding: 16px;
+      }
+
+      #preview {
+        width: 100%;
+        height: 100%;
+        border: 1px solid #111;
+        background: #eef1f6;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+        background-image: linear-gradient(
+            rgba(255, 255, 255, 0.55),
+            rgba(255, 255, 255, 0.55)
+          ),
+          linear-gradient(90deg, rgba(40, 48, 60, 0.05) 1px, transparent 1px),
+          linear-gradient(rgba(40, 48, 60, 0.05) 1px, transparent 1px);
+        background-size: auto, 24px 24px, 24px 24px;
+      }
+
+      .preview-btn {
+        position: absolute;
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(26, 58, 112, 0.2);
+      }
+
+      .preview-empty {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #667;
+        font-size: 14px;
+      }
+
+      .node {
+        position: absolute;
+        width: 240px;
+        background: linear-gradient(#36363c, #2f2f35);
+        border: 1px solid #141519;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+      }
+
+      .node.buttonsc-node {
+        width: 440px;
+      }
+
+      .buttonsc-top-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 8px;
+        align-items: start;
+      }
+
+      .buttonsc-triple-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        align-items: start;
+      }
+
+      .buttonsc-fill-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .buttonsc-fill-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid #1b1c21;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.08);
+        min-height: 100%;
+      }
+
+      .buttonsc-fill-card .subsection:first-child .field-label,
+      .buttonsc-fill-card > .field-label:first-child {
+        margin-top: 0;
+      }
+
+      .buttonsc-top-grid > div,
+      .buttonsc-triple-row > div {
+        min-width: 0;
+      }
+
+      .buttonsc-top-grid .color-picker-row,
+      .buttonsc-triple-row .color-picker-row,
+      .buttonsc-fill-card .color-picker-row {
+        align-items: center;
+      }
+
+      .buttonsc-fill-card .small-note {
+        margin-top: auto;
+      }
+
+      .buttonsc-mini-card {
+        padding: 8px;
+        border: 1px solid #1b1c21;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      .buttonsc-mini-card .field-label:first-child {
+        margin-top: 0;
+      }
+
+      .node-header {
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        font-size: 12px;
+        border-bottom: 1px solid #1b1c21;
+        cursor: move;
+        letter-spacing: 0.25px;
+      }
+
+      .node-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .node-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .node-icon-btn {
+        width: 20px;
+        height: 20px;
+        border: none;
+        border-radius: 4px;
+        background: rgba(8, 9, 11, 0.25);
+        color: #f4f4f6;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .node-icon-btn:hover {
+        background: rgba(8, 9, 11, 0.42);
+      }
+
+      .inline-icon-btn {
+        width: 24px;
+        height: 24px;
+      }
+
+      .node-body {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .field-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .text-input,
+      .num-input,
+      .select-input {
+        width: 100%;
+        height: 30px;
+        background: linear-gradient(#24242a, #212127);
+        border: 1px solid #15161a;
+        color: var(--text);
+        border-radius: 5px;
+        outline: none;
+        padding: 0 9px;
+        font-size: 13px;
+      }
+
+      .select-input {
+        color-scheme: dark;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .port-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 4px;
+      }
+
+      .port-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .port-label {
+        font-size: 11px;
+        color: #d6d9e0;
+        white-space: nowrap;
+      }
+
+      .port {
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.55);
+        cursor: pointer;
+        flex: 0 0 auto;
+        position: relative;
+      }
+
+      .port::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.28);
+      }
+
+      .port.in {
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      }
+
+      .port.out {
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      }
+
+      .port.button {
+        background: var(--green);
+      }
+
+      .port.position {
+        background: var(--orange);
+      }
+
+      .port.scale {
+        background: var(--purple);
+      }
+
+      .port.color {
+        background: var(--pink);
+      }
+
+      .port.textColor {
+        background: #59d0d8;
+      }
+
+      .port.background {
+        background: #7cb36c;
+      }
+
+      .port.stroke {
+        background: #f0c36a;
+      }
+
+      .port.textStroke {
+        background: #76c7ff;
+      }
+
+      .port.shadow {
+        background: #8a93b8;
+      }
+
+      .port.radius {
+        background: #9ae27d;
+      }
+
+      .node.button-node .node-header {
+        background: linear-gradient(#3d5946, #354b3d);
+      }
+
+      .node.buttonsc-node .node-header {
+        background: linear-gradient(#346351, #2d5444);
+      }
+
+      .node.position-node .node-header {
+        background: linear-gradient(#66503b, #584631);
+      }
+
+      .node.scale-node .node-header {
+        background: linear-gradient(#514a76, #464064);
+      }
+
+      .node.color-node .node-header {
+        background: linear-gradient(#7a4560, #66364f);
+      }
+
+      .node.textcolor-node .node-header {
+        background: linear-gradient(#3f6972, #32545c);
+      }
+
+      .node.background-node .node-header {
+        background: linear-gradient(#557247, #465e3a);
+      }
+
+      .node.stroke-node .node-header {
+        background: linear-gradient(#7d6337, #6b532c);
+      }
+
+      .node.textstroke-node .node-header {
+        background: linear-gradient(#3f6f86, #335b6f);
+      }
+
+      .node.shadow-node .node-header {
+        background: linear-gradient(#575f7f, #494f69);
+      }
+
+      .node.radius-node .node-header {
+        background: linear-gradient(#53793e, #466634);
+      }
+
+      .color-preview {
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid #15161a;
+        background: #ffffff;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      .color-picker-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .color-wheel-input {
+        width: 42px;
+        height: 30px;
+        padding: 2px;
+        border: 1px solid #15161a;
+        border-radius: 5px;
+        background: linear-gradient(#24242a, #212127);
+        cursor: pointer;
+      }
+
+      .color-mode-block {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .field-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .subsection {
+        padding-top: 2px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .badge {
+        font-size: 10px;
+        color: #eef3ff;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 2px 6px;
+        border-radius: 999px;
+      }
+
+      .small-note {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      .preview-meta {
+        font-size: 11px;
+        color: #b7bbc4;
+      }
+
+      #status {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        background: rgba(20, 21, 25, 0.9);
+        color: #dfe6ff;
+        border: 1px solid #0b0c0f;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 12px;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: 0.18s ease;
+      }
+
+      #status.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="topbar">
+      <div class="top-group">
+        <button class="icon-btn" id="resetBtn" title="Reset graph">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 12a9 9 0 1 0 3-6.7" />
+            <path d="M3 4v5h5" />
+          </svg>
+        </button>
+        <button class="icon-btn" id="centerBtn" title="Center graph">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="top-divider"></div>
+
+      <div class="top-group">
+        <select class="top-select">
+          <option>Object</option>
+        </select>
+        <span class="top-title">Node Web Engine</span>
+      </div>
+
+      <div class="top-group">
+        <select class="top-select">
+          <option>Slot 1</option>
+        </select>
+        <select class="top-select">
+          <option>Material</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="main">
+      <aside id="sidebar">
+        <div class="sidebar-header">NODE LIBRARY</div>
+        <div id="node-list">
+          <div class="node-list-item" data-node-type="button">
+            <span class="mini-dot dot-button"></span>
+            <span>Button</span>
+          </div>
+          <div class="node-list-item" data-node-type="buttonsc">
+            <span class="mini-dot dot-buttonsc"></span>
+            <span>Button SC</span>
+          </div>
+          <div class="node-list-item" data-node-type="position">
+            <span class="mini-dot dot-position"></span>
+            <span>Position</span>
+          </div>
+          <div class="node-list-item" data-node-type="scale">
+            <span class="mini-dot dot-scale"></span>
+            <span>Scale</span>
+          </div>
+          <div class="node-list-item" data-node-type="color">
+            <span class="mini-dot dot-color"></span>
+            <span>Color</span>
+          </div>
+          <div class="node-list-item" data-node-type="textcolor">
+            <span class="mini-dot dot-textcolor"></span>
+            <span>Text Color</span>
+          </div>
+          <div class="node-list-item" data-node-type="background">
+            <span class="mini-dot dot-background"></span>
+            <span>Background</span>
+          </div>
+          <div class="node-list-item" data-node-type="stroke">
+            <span class="mini-dot dot-stroke"></span>
+            <span>Button Stroke</span>
+          </div>
+          <div class="node-list-item" data-node-type="textstroke">
+            <span class="mini-dot dot-textstroke"></span>
+            <span>Text Stroke</span>
+          </div>
+          <div class="node-list-item" data-node-type="shadow">
+            <span class="mini-dot dot-shadow"></span>
+            <span>Shadow</span>
+          </div>
+          <div class="node-list-item" data-node-type="radius">
+            <span class="mini-dot dot-radius"></span>
+            <span>Corner Radius</span>
+          </div>
+        </div>
+        <div id="layer-panel">
+          <div class="layer-panel-header">LAYERS</div>
+          <div id="layer-list" class="layer-list">
+            <div class="layer-empty">No Layers</div>
+          </div>
+        </div>
+      </aside>
+
+      <section id="center">
+        <div id="canvas-wrap">
+          <div id="canvas">
+            <svg id="connections"></svg>
+          </div>
+        </div>
+        <div id="status"></div>
+      </section>
+
+      <aside id="preview-panel">
+        <div id="preview-top">
+          <span>LIVE PREVIEW</span>
+          <span class="preview-meta">
+            Button nodes read connected Position, Scale, Color, and Text Color
+            nodes
+          </span>
+        </div>
+        <div id="preview-wrap">
+          <div id="preview"></div>
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const connectionsSvg = document.getElementById("connections");
+      const preview = document.getElementById("preview");
+      const statusEl = document.getElementById("status");
+      const layerList = document.getElementById("layer-list");
+
+      let nodeIdCounter = 1;
+      let layerIdCounter = 1;
+      let activeWire = null;
+      let activeLayerId = null;
+      let activeInteractionKind = null;
+      let copiedNodePayload = null;
+
+      const layers = [];
+
+      const graph = {
+        nodes: [],
+        connections: [],
+      };
+
+      function showStatus(msg) {
+        statusEl.textContent = msg;
+        statusEl.classList.add("show");
+        clearTimeout(showStatus._t);
+        showStatus._t = setTimeout(() => {
+          statusEl.classList.remove("show");
+        }, 1300);
+      }
+
+      function makeNode(type, x, y, data = {}, layerId = null, interactionKind = null) {
+        const id = "node_" + nodeIdCounter++;
+        const node = {
+          id,
+          type,
+          x,
+          y,
+          layerId,
+          interactionKind,
+          data: defaultDataFor(type),
+        };
+
+        Object.assign(node.data, data);
+        graph.nodes.push(node);
+        if (isNodeVisible(node)) {
+          renderNode(node);
+        }
+        updatePreview();
+        return node;
+      }
+
+      function createLayer(name = null) {
+        const layer = {
+          id: "layer_" + layerIdCounter++,
+          name: name || `Button ${layers.length + 1}`,
+        };
+        layers.push(layer);
+        return layer;
+      }
+
+      function isNodeVisible(node) {
+        if (activeLayerId === "background") {
+          return node.type === "background";
+        }
+        return (
+          node.layerId === activeLayerId &&
+          (node.interactionKind || null) === (activeInteractionKind || null)
+        );
+      }
+
+      function getVisibleNodes() {
+        return graph.nodes.filter(isNodeVisible);
+      }
+
+      function isButtonRootType(type) {
+        return type === "button" || type === "buttonsc";
+      }
+
+      function getLayerLabel(layer) {
+        if (layer.id === "background") {
+          return "Background";
+        }
+        const buttonNode = graph.nodes.find(
+          (n) => isButtonRootType(n.type) && n.layerId === layer.id
+        );
+        const buttonText = buttonNode?.data?.text?.trim();
+        return buttonText || layer.name;
+      }
+
+      function getInteractionLabel(kind) {
+        return kind === "hover" ? "On Hover" : "On Click";
+      }
+
+      function getLayerIcon(layer) {
+        if (layer.id === "background") {
+          return `
+            <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect>
+              <path d="M7 15l3.2-3.2a1 1 0 0 1 1.4 0L14 14l2.2-2.2a1 1 0 0 1 1.4 0L20 14"></path>
+              <circle cx="9" cy="9" r="1.3"></circle>
+            </svg>
+          `;
+        }
+
+        return `
+          <svg class="layer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="7" width="16" height="10" rx="3"></rect>
+            <path d="M8 12h8"></path>
+          </svg>
+        `;
+      }
+
+      function getCopyIconSvg() {
+        return `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        `;
+      }
+
+      function updateLayerControls() {
+        const layerItems = [...layers];
+        if (graph.nodes.some((n) => n.type === "background")) {
+          layerItems.unshift({ id: "background", name: "Background" });
+        }
+
+        if (!layerItems.length) {
+          layerList.innerHTML = `<div class="layer-empty">No Layers</div>`;
+          return;
+        }
+
+        layerList.innerHTML = layerItems
+          .map((layer) => {
+            const isBaseActive =
+              layer.id === activeLayerId && (activeInteractionKind || null) === null;
+            const baseRow = `
+              <div class="layer-item ${isBaseActive ? "active" : ""}" role="button" tabindex="0" data-layer-id="${layer.id}">
+                ${getLayerIcon(layer)}
+                <span class="layer-name">${escapeHtml(getLayerLabel(layer))}</span>
+                <button class="layer-copy-btn" type="button" data-copy-layer-id="${layer.id}" title="Copy layer" aria-label="Copy layer">
+                  ${getCopyIconSvg()}
+                </button>
+              </div>
+            `;
+
+            if (layer.id === "background") {
+              return baseRow;
+            }
+
+            return `
+              ${baseRow}
+              <div class="layer-item layer-subitem ${
+                layer.id === activeLayerId && activeInteractionKind === "hover" ? "active" : ""
+              }" role="button" tabindex="0" data-layer-id="${layer.id}" data-interaction-kind="hover">
+                <span class="layer-branch" aria-hidden="true"></span>
+                <span class="layer-name">${getInteractionLabel("hover")}</span>
+              </div>
+              <div class="layer-item layer-subitem ${
+                layer.id === activeLayerId && activeInteractionKind === "click" ? "active" : ""
+              }" role="button" tabindex="0" data-layer-id="${layer.id}" data-interaction-kind="click">
+                <span class="layer-branch" aria-hidden="true"></span>
+                <span class="layer-name">${getInteractionLabel("click")}</span>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function rerenderCanvas() {
+        canvas.querySelectorAll(".node").forEach((n) => n.remove());
+        for (const node of getVisibleNodes()) {
+          renderNode(node);
+        }
+        drawConnections();
+      }
+
+      function cloneData(data) {
+        return JSON.parse(JSON.stringify(data));
+      }
+
+      function sanitizeButtonData(data) {
+        return {
+          ...data,
+          positionNodeId: null,
+          scaleNodeId: null,
+          colorNodeId: null,
+          textColorNodeId: null,
+          strokeNodeId: null,
+          textStrokeNodeId: null,
+          shadowNodeId: null,
+          radiusNodeId: null,
+        };
+      }
+
+      function copyNode(nodeId) {
+        const node = graph.nodes.find((n) => n.id === nodeId);
+        if (!node) {
+          return;
+        }
+
+        copiedNodePayload = {
+          type: node.type,
+          data: cloneData(node.data),
+          interactionKind: node.interactionKind || null,
+        };
+        showStatus(`${node.type} copied`);
+      }
+
+      function pasteCopiedNode() {
+        if (!copiedNodePayload) {
+          showStatus("Nothing copied");
+          return;
+        }
+
+        const type = copiedNodePayload.type;
+        const spawnPos = nextSpawnPosition(type);
+
+        if (isButtonRootType(type)) {
+          const layer = createLayer(`${(copiedNodePayload.data.text || "Button").trim() || "Button"} Copy`);
+          activeLayerId = layer.id;
+          activeInteractionKind = null;
+          updateLayerControls();
+          makeNode(
+            type,
+            spawnPos.x,
+            spawnPos.y,
+            type === "button"
+              ? sanitizeButtonData(cloneData(copiedNodePayload.data))
+              : cloneData(copiedNodePayload.data),
+            layer.id,
+            null
+          );
+          rerenderCanvas();
+          showStatus(`${type === "buttonsc" ? "Button SC" : "Button"} pasted into new layer`);
+          return;
+        }
+
+        if (type === "background") {
+          activeLayerId = "background";
+          activeInteractionKind = null;
+          makeNode(type, spawnPos.x, spawnPos.y, cloneData(copiedNodePayload.data), null, null);
+          updateLayerControls();
+          rerenderCanvas();
+          showStatus("Background pasted");
+          return;
+        }
+
+        if (!activeLayerId || activeLayerId === "background") {
+          showStatus("Select a button layer to paste this node");
+          return;
+        }
+
+        makeNode(
+          type,
+          spawnPos.x,
+          spawnPos.y,
+          cloneData(copiedNodePayload.data),
+          activeLayerId,
+          activeInteractionKind
+        );
+        rerenderCanvas();
+        showStatus(`${type} pasted`);
+      }
+
+      function duplicateLayer(layerId) {
+        if (layerId === "background") {
+          const backgroundNodes = graph.nodes.filter((n) => n.type === "background");
+          if (!backgroundNodes.length) {
+            showStatus("No background layer to copy");
+            return;
+          }
+          for (const node of backgroundNodes) {
+            makeNode(node.type, node.x + 24, node.y + 24, cloneData(node.data), null);
+          }
+          activeLayerId = "background";
+          updateLayerControls();
+          rerenderCanvas();
+          showStatus("Background layer copied");
+          return;
+        }
+
+        const sourceLayer = layers.find((layer) => layer.id === layerId);
+        if (!sourceLayer) {
+          return;
+        }
+
+        const sourceNodes = graph.nodes.filter((n) => n.layerId === layerId);
+        if (!sourceNodes.length) {
+          return;
+        }
+
+        const newLayer = createLayer(`${getLayerLabel(sourceLayer)} Copy`);
+        const idMap = new Map();
+
+        for (const node of sourceNodes) {
+          const nodeData =
+            node.type === "button"
+              ? sanitizeButtonData(cloneData(node.data))
+              : cloneData(node.data);
+          const clone = makeNode(
+            node.type,
+            node.x + 24,
+            node.y + 24,
+            nodeData,
+            newLayer.id,
+            node.interactionKind || null
+          );
+          idMap.set(node.id, clone.id);
+        }
+
+        const sourceConnections = graph.connections.filter(
+          (c) => idMap.has(c.fromNodeId) && idMap.has(c.toNodeId)
+        );
+
+        for (const conn of sourceConnections) {
+          const newFromId = idMap.get(conn.fromNodeId);
+          const newToId = idMap.get(conn.toNodeId);
+          graph.connections.push({
+            fromNodeId: newFromId,
+            toNodeId: newToId,
+            role: conn.role,
+          });
+          const toNode = graph.nodes.find((n) => n.id === newToId);
+          if (toNode?.type === "button") {
+            if (conn.role === "position") toNode.data.positionNodeId = newFromId;
+            if (conn.role === "scale") toNode.data.scaleNodeId = newFromId;
+            if (conn.role === "color") toNode.data.colorNodeId = newFromId;
+            if (conn.role === "textColor") toNode.data.textColorNodeId = newFromId;
+            if (conn.role === "stroke") toNode.data.strokeNodeId = newFromId;
+            if (conn.role === "textStroke") toNode.data.textStrokeNodeId = newFromId;
+            if (conn.role === "shadow") toNode.data.shadowNodeId = newFromId;
+            if (conn.role === "radius") toNode.data.radiusNodeId = newFromId;
+          }
+        }
+
+        activeLayerId = newLayer.id;
+        activeInteractionKind = null;
+        updateLayerControls();
+        rerenderCanvas();
+        updatePreview();
+        showStatus("Layer copied");
+      }
+
+      function setActiveLayer(layerId, interactionKind = null) {
+        activeLayerId = layerId;
+        activeInteractionKind = interactionKind;
+        updateLayerControls();
+        rerenderCanvas();
+      }
+
+      function defaultDataFor(type) {
+        if (type === "button") {
+          return {
+            text: "Button",
+            positionNodeId: null,
+            scaleNodeId: null,
+            colorNodeId: null,
+            textColorNodeId: null,
+            strokeNodeId: null,
+            textStrokeNodeId: null,
+            shadowNodeId: null,
+            radiusNodeId: null,
+          };
+        }
+
+        if (type === "buttonsc") {
+          return {
+            text: "Button",
+            x: 120,
+            y: 90,
+            align: "left",
+            scaleMode: "scale",
+            scaleTarget: "button",
+            scale: 1,
+            width: 140,
+            height: 44,
+            buttonFillMode: "solid",
+            buttonFillSolid: "#2e7bf5",
+            buttonFillStart: "#2e7bf5",
+            buttonFillEnd: "#215fc0",
+            buttonFillAngle: 180,
+            buttonFillRadialShape: "circle",
+            buttonFillRadialPosition: "center",
+            buttonFillConicAngle: 0,
+            textColor: "#ffffff",
+            strokeWidth: 0,
+            strokePosition: "outside",
+            strokeMode: "solid",
+            strokeSolid: "#ffffff",
+            strokeStart: "#ffffff",
+            strokeEnd: "#b9c6e3",
+            strokeAngle: 180,
+            strokeRadialShape: "circle",
+            strokeRadialPosition: "center",
+            strokeConicAngle: 0,
+            radiusLinked: true,
+            radius: 8,
+            radiusTL: 8,
+            radiusTR: 8,
+            radiusBR: 8,
+            radiusBL: 8,
+            shadowMode: "none",
+            shadowX: 0,
+            shadowY: 8,
+            shadowBlur: 18,
+            shadowSpread: 0,
+            shadowColor: "#1c2740",
+          };
+        }
+
+        if (type === "position") {
+          return {
+            x: 120,
+            y: 90,
+            align: "left",
+          };
+        }
+
+        if (type === "scale") {
+          return {
+            mode: "scale",
+            target: "button",
+            scale: 1,
+            width: 140,
+            height: 44,
+          };
+        }
+
+        if (type === "color") {
+          return {
+            mode: "solid",
+            solid: "#2e7bf5",
+            start: "#2e7bf5",
+            end: "#215fc0",
+            angle: 180,
+            radialShape: "circle",
+            radialPosition: "center",
+            conicAngle: 0,
+          };
+        }
+
+        if (type === "textcolor") {
+          return {
+            color: "#ffffff",
+          };
+        }
+
+        if (type === "background") {
+          return {
+            mode: "solid",
+            solid: "#eef1f6",
+            start: "#eef1f6",
+            end: "#dce6f2",
+            angle: 180,
+            radialShape: "circle",
+            radialPosition: "center",
+            conicAngle: 0,
+          };
+        }
+
+        if (type === "stroke") {
+          return {
+            mode: "solid",
+            solid: "#ffffff",
+            start: "#ffffff",
+            end: "#b9c6e3",
+            angle: 180,
+            radialShape: "circle",
+            radialPosition: "center",
+            conicAngle: 0,
+            width: 0,
+            position: "outside",
+          };
+        }
+
+        if (type === "textstroke") {
+          return {
+            mode: "solid",
+            solid: "#1d2433",
+            start: "#1d2433",
+            end: "#43516f",
+            angle: 180,
+            radialShape: "circle",
+            radialPosition: "center",
+            conicAngle: 0,
+            width: 0,
+          };
+        }
+
+        if (type === "shadow") {
+          return {
+            mode: "none",
+            x: 0,
+            y: 8,
+            blur: 18,
+            spread: 0,
+            color: "#1c2740",
+          };
+        }
+
+        if (type === "radius") {
+          return {
+            linked: true,
+            all: 8,
+            tl: 8,
+            tr: 8,
+            br: 8,
+            bl: 8,
+          };
+        }
+
+        return {};
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function getFillConfig(nodeData, prefix, fallbackSolid = "#ffffff", fallbackEnd = "#c8d2e8") {
+        const key = (suffix) => (prefix ? `${prefix}${suffix}` : suffix.charAt(0).toLowerCase() + suffix.slice(1));
+        return {
+          mode: nodeData[key("Mode")] || "solid",
+          solid: nodeData[key("Solid")] || fallbackSolid,
+          start: nodeData[key("Start")] || fallbackSolid,
+          end: nodeData[key("End")] || fallbackEnd,
+          angle: nodeData[key("Angle")] ?? 180,
+          radialShape: nodeData[key("RadialShape")] || "circle",
+          radialPosition: nodeData[key("RadialPosition")] || "center",
+          conicAngle: nodeData[key("ConicAngle")] ?? 0,
+        };
+      }
+
+      function renderFillControls(prefix, title, data, defaults) {
+        const config = getFillConfig(data, prefix, defaults.solid, defaults.end);
+        const field = (suffix) => (prefix ? `${prefix}${suffix}` : suffix.charAt(0).toLowerCase() + suffix.slice(1));
+        return `
+          <div class="subsection">
+            <div class="field-label">${title}</div>
+            <select class="select-input" data-field="${field("Mode")}">
+              <option value="solid" ${config.mode === "solid" ? "selected" : ""}>Solid</option>
+              <option value="linear" ${config.mode === "linear" ? "selected" : ""}>Linear Gradient</option>
+              <option value="radial" ${config.mode === "radial" ? "selected" : ""}>Radial Gradient</option>
+              <option value="conic" ${config.mode === "conic" ? "selected" : ""}>Conic Gradient</option>
+            </select>
+          </div>
+
+          <div class="color-mode-block" style="${config.mode === "solid" ? "" : "display:none;"}">
+            <div>
+              <div class="field-label">Color Hex</div>
+              <div class="color-picker-row">
+                <input class="text-input" data-field="${field("Solid")}" type="text" value="${escapeHtml(
+                  config.solid
+                )}" placeholder="${defaults.solid}">
+                <input class="color-wheel-input" data-field="${field("Solid")}Picker" type="color" value="${escapeHtml(
+                  normalizeHex(config.solid, defaults.solid)
+                )}" title="Open color picker">
+              </div>
+            </div>
+          </div>
+
+          <div class="color-mode-block" style="${config.mode !== "solid" ? "" : "display:none;"}">
+            <div class="row">
+              <div>
+                <div class="field-label">Start Hex</div>
+                <div class="color-picker-row">
+                  <input class="text-input" data-field="${field("Start")}" type="text" value="${escapeHtml(
+                    config.start
+                  )}" placeholder="${defaults.solid}">
+                  <input class="color-wheel-input" data-field="${field("Start")}Picker" type="color" value="${escapeHtml(
+                    normalizeHex(config.start, defaults.solid)
+                  )}" title="Open color picker">
+                </div>
+              </div>
+              <div>
+                <div class="field-label">End Hex</div>
+                <div class="color-picker-row">
+                  <input class="text-input" data-field="${field("End")}" type="text" value="${escapeHtml(
+                    config.end
+                  )}" placeholder="${defaults.end}">
+                  <input class="color-wheel-input" data-field="${field("End")}Picker" type="color" value="${escapeHtml(
+                    normalizeHex(config.end, defaults.end)
+                  )}" title="Open color picker">
+                </div>
+              </div>
+            </div>
+
+            <div style="${config.mode === "linear" ? "" : "display:none;"}">
+              <div class="field-label">Angle</div>
+              <input class="num-input" data-field="${field("Angle")}" type="number" value="${
+                config.angle
+              }">
+            </div>
+
+            <div style="${config.mode === "radial" ? "" : "display:none;"}">
+              <div class="row">
+                  <div>
+                    <div class="field-label">Shape</div>
+                    <select class="select-input" data-field="${field("RadialShape")}">
+                      <option value="circle" ${config.radialShape === "circle" ? "selected" : ""}>Circle</option>
+                      <option value="ellipse" ${config.radialShape === "ellipse" ? "selected" : ""}>Ellipse</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div class="field-label">Position</div>
+                    <select class="select-input" data-field="${field("RadialPosition")}">
+                      <option value="center" ${config.radialPosition === "center" ? "selected" : ""}>Center</option>
+                      <option value="top" ${config.radialPosition === "top" ? "selected" : ""}>Top</option>
+                      <option value="bottom" ${config.radialPosition === "bottom" ? "selected" : ""}>Bottom</option>
+                    <option value="left" ${config.radialPosition === "left" ? "selected" : ""}>Left</option>
+                    <option value="right" ${config.radialPosition === "right" ? "selected" : ""}>Right</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div style="${config.mode === "conic" ? "" : "display:none;"}">
+              <div class="field-label">Start Angle</div>
+              <input class="num-input" data-field="${field("ConicAngle")}" type="number" value="${
+                config.conicAngle
+              }">
+            </div>
+          </div>
+        `;
+      }
+
+      function getButtonRadiusValues(data) {
+        if (data.radiusLinked) {
+          const value = Math.max(0, Number(data.radius) || 0);
+          return { tl: value, tr: value, br: value, bl: value };
+        }
+
+        return {
+          tl: Math.max(0, Number(data.radiusTL) || 0),
+          tr: Math.max(0, Number(data.radiusTR) || 0),
+          br: Math.max(0, Number(data.radiusBR) || 0),
+          bl: Math.max(0, Number(data.radiusBL) || 0),
+        };
+      }
+
+      function getRadiusNodeValues(data) {
+        if (data.linked) {
+          const value = Math.max(0, Number(data.all) || 0);
+          return { tl: value, tr: value, br: value, bl: value };
+        }
+
+        return {
+          tl: Math.max(0, Number(data.tl) || 0),
+          tr: Math.max(0, Number(data.tr) || 0),
+          br: Math.max(0, Number(data.br) || 0),
+          bl: Math.max(0, Number(data.bl) || 0),
+        };
+      }
+
+      function insetRadiusValues(radii, inset) {
+        return {
+          tl: Math.max(0, radii.tl - inset),
+          tr: Math.max(0, radii.tr - inset),
+          br: Math.max(0, radii.br - inset),
+          bl: Math.max(0, radii.bl - inset),
+        };
+      }
+
+      function outsetRadiusValues(radii, amount) {
+        return {
+          tl: Math.max(0, radii.tl + amount),
+          tr: Math.max(0, radii.tr + amount),
+          br: Math.max(0, radii.br + amount),
+          bl: Math.max(0, radii.bl + amount),
+        };
+      }
+
+      function radiusCss(radii) {
+        return `${radii.tl}px ${radii.tr}px ${radii.br}px ${radii.bl}px`;
+      }
+
+      function buildShadowCss(data) {
+        if (!data || data.mode !== "custom") {
+          return "none";
+        }
+
+        const x = Number(data.x) || 0;
+        const y = Number(data.y) || 0;
+        const blur = Math.max(0, Number(data.blur) || 0);
+        const spread = Number(data.spread) || 0;
+        const color = normalizeHex(data.color, "#1c2740");
+        return `${x}px ${y}px ${blur}px ${spread}px ${color}`;
+      }
+
+      function radialPositionPercent(position) {
+        if (position === "top") return { x: "50%", y: "0%" };
+        if (position === "bottom") return { x: "50%", y: "100%" };
+        if (position === "left") return { x: "0%", y: "50%" };
+        if (position === "right") return { x: "100%", y: "50%" };
+        return { x: "50%", y: "50%" };
+      }
+
+      function buildSvgPaint(defId, colorData, fallbackSolid = "#ffffff") {
+        const mode = colorData.mode || "solid";
+        const solid = normalizeHex(colorData.solid, fallbackSolid);
+        const start = normalizeHex(colorData.start, fallbackSolid);
+        const end = normalizeHex(colorData.end, fallbackSolid);
+
+        if (mode === "solid" || mode === "conic") {
+          return { defs: "", paint: mode === "conic" ? start : solid };
+        }
+
+        if (mode === "linear") {
+          const angle = Number.isFinite(Number(colorData.angle))
+            ? Number(colorData.angle)
+            : 180;
+          return {
+            defs: `<linearGradient id="${defId}" gradientTransform="rotate(${angle} .5 .5)"><stop offset="0%" stop-color="${start}"></stop><stop offset="100%" stop-color="${end}"></stop></linearGradient>`,
+            paint: `url(#${defId})`,
+          };
+        }
+
+        const position = radialPositionPercent(colorData.radialPosition);
+        return {
+          defs: `<radialGradient id="${defId}" cx="${position.x}" cy="${position.y}" r="75%"><stop offset="0%" stop-color="${start}"></stop><stop offset="100%" stop-color="${end}"></stop></radialGradient>`,
+          paint: `url(#${defId})`,
+        };
+      }
+
+      function renderButtonLabelSvg(buttonNode, textStrokeData, width, height, fontSize, textColor) {
+        const textStrokeWidth = Math.max(0, Number(textStrokeData?.width) || 0);
+        const strokeConfig = getFillConfig(
+          {
+            textStrokeMode: textStrokeData?.mode,
+            textStrokeSolid: textStrokeData?.solid,
+            textStrokeStart: textStrokeData?.start,
+            textStrokeEnd: textStrokeData?.end,
+            textStrokeAngle: textStrokeData?.angle,
+            textStrokeRadialShape: textStrokeData?.radialShape,
+            textStrokeRadialPosition: textStrokeData?.radialPosition,
+            textStrokeConicAngle: textStrokeData?.conicAngle,
+          },
+          "textStroke",
+          "#1d2433",
+          "#43516f"
+        );
+        const gradient = buildSvgPaint(
+          `text-stroke-${buttonNode.id}`,
+          strokeConfig,
+          "#1d2433"
+        );
+
+        return `
+          <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-hidden="true">
+            <defs>${gradient.defs}</defs>
+            <text
+              x="50%"
+              y="50%"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-size="${fontSize}"
+              font-weight="600"
+              font-family="Segoe UI, Inter, Roboto, Arial, sans-serif"
+              fill="${textColor}"
+              stroke="${textStrokeWidth > 0 ? gradient.paint : "none"}"
+              stroke-width="${textStrokeWidth}"
+              paint-order="stroke fill"
+              stroke-linejoin="round"
+            >${escapeHtml(buttonNode.data.text || "Button")}</text>
+          </svg>
+        `;
+      }
+
+      function renderNode(node) {
+        const el = document.createElement("div");
+        el.className = `node ${node.type}-node`;
+        el.dataset.nodeId = node.id;
+        el.style.left = node.x + "px";
+        el.style.top = node.y + "px";
+
+        const titleMap = {
+          buttonsc: "Button SC",
+          textcolor: "Text Color",
+          textstroke: "Text Stroke",
+          background: "Background",
+          stroke: "Button Stroke",
+          shadow: "Shadow",
+          radius: "Corner Radius",
+        };
+        const title = titleMap[node.type] ||
+          node.type.charAt(0).toUpperCase() + node.type.slice(1);
+
+        let body = "";
+
+        if (node.type === "button") {
+          body = `
+            <div>
+              <div class="field-label">Button Label</div>
+              <input class="text-input" data-field="text" type="text" value="${escapeHtml(
+                node.data.text
+              )}">
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Position</div>
+              </div>
+              <div class="port-group">
+                <div class="port position in" data-port-kind="in" data-port-role="position"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Scale</div>
+              </div>
+              <div class="port-group">
+                <div class="port scale in" data-port-kind="in" data-port-role="scale"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Color</div>
+              </div>
+              <div class="port-group">
+                <div class="port color in" data-port-kind="in" data-port-role="color"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Text Color</div>
+              </div>
+              <div class="port-group">
+                <div class="port textColor in" data-port-kind="in" data-port-role="textColor"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Button Stroke</div>
+              </div>
+              <div class="port-group">
+                <div class="port stroke in" data-port-kind="in" data-port-role="stroke"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Text Stroke</div>
+              </div>
+              <div class="port-group">
+                <div class="port textStroke in" data-port-kind="in" data-port-role="textStroke"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Shadow</div>
+              </div>
+              <div class="port-group">
+                <div class="port shadow in" data-port-kind="in" data-port-role="shadow"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Corner Radius</div>
+              </div>
+              <div class="port-group">
+                <div class="port radius in" data-port-kind="in" data-port-role="radius"></div>
+              </div>
+            </div>
+
+            <div class="small-note">
+              This node creates the button in the preview. Connect styling nodes into it to keep the editor cleaner.
+            </div>
+          `;
+        }
+
+        if (node.type === "buttonsc") {
+          const radiusValues = getButtonRadiusValues(node.data);
+          body = `
+            <div class="buttonsc-top-grid">
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Button Label</div>
+                <input class="text-input" data-field="text" type="text" value="${escapeHtml(
+                  node.data.text
+                )}">
+              </div>
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Align</div>
+                <select class="select-input" data-field="align">
+                  <option value="left" ${node.data.align === "left" ? "selected" : ""}>Left</option>
+                  <option value="center" ${node.data.align === "center" ? "selected" : ""}>Center</option>
+                  <option value="right" ${node.data.align === "right" ? "selected" : ""}>Right</option>
+                </select>
+              </div>
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Text Color</div>
+                <div class="color-picker-row">
+                  <input class="text-input" data-field="textColor" type="text" value="${escapeHtml(node.data.textColor)}" placeholder="#ffffff">
+                  <input class="color-wheel-input" data-field="textColorPicker" type="color" value="${escapeHtml(
+                    normalizeHex(node.data.textColor, "#ffffff")
+                  )}" title="Open color picker">
+                </div>
+              </div>
+            </div>
+
+            <div class="buttonsc-triple-row">
+              <div class="buttonsc-mini-card">
+                <div class="field-label">X</div>
+                <input class="num-input" data-field="x" type="number" value="${node.data.x}">
+              </div>
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Y</div>
+                <input class="num-input" data-field="y" type="number" value="${node.data.y}">
+              </div>
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Scale Mode</div>
+                <select class="select-input" data-field="scaleMode">
+                  <option value="scale" ${node.data.scaleMode === "scale" ? "selected" : ""}>Scale</option>
+                  <option value="size" ${node.data.scaleMode === "size" ? "selected" : ""}>Size</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="buttonsc-triple-row">
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Affects</div>
+                <select class="select-input" data-field="scaleTarget">
+                  <option value="button" ${node.data.scaleTarget === "button" ? "selected" : ""}>Button</option>
+                  <option value="text" ${node.data.scaleTarget === "text" ? "selected" : ""}>Text</option>
+                </select>
+              </div>
+              <div class="buttonsc-mini-card color-mode-block" style="${node.data.scaleMode === "scale" ? "" : "display:none;"}">
+                <div class="field-label">Scale</div>
+                <input class="num-input" data-field="scale" type="number" step="0.1" value="${node.data.scale}">
+              </div>
+              <div class="buttonsc-mini-card color-mode-block" style="${node.data.scaleMode === "size" ? "" : "display:none;"}">
+                <div class="field-label">W</div>
+                <input class="num-input" data-field="width" type="number" value="${node.data.width}">
+              </div>
+            </div>
+
+            <div class="buttonsc-triple-row">
+              <div class="buttonsc-mini-card color-mode-block" style="${node.data.scaleMode === "size" ? "" : "display:none;"}">
+                <div class="field-label">H</div>
+                <input class="num-input" data-field="height" type="number" value="${node.data.height}">
+              </div>
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Shadow</div>
+                <select class="select-input" data-field="shadowMode">
+                  <option value="none" ${node.data.shadowMode === "none" ? "selected" : ""}>None</option>
+                  <option value="custom" ${node.data.shadowMode === "custom" ? "selected" : ""}>Custom</option>
+                </select>
+              </div>
+              <div class="buttonsc-mini-card">
+                <div class="field-label">Stroke Width</div>
+                <input class="num-input" data-field="strokeWidth" type="number" min="0" step="1" value="${node.data.strokeWidth}">
+              </div>
+            </div>
+
+            <div class="buttonsc-fill-pair">
+              <div class="buttonsc-fill-card">
+                ${renderFillControls("buttonFill", "Button Fill", node.data, { solid: "#2e7bf5", end: "#215fc0" })}
+              </div>
+              <div class="buttonsc-fill-card">
+                <div>
+                  <div class="field-label">Stroke Side</div>
+                  <select class="select-input" data-field="strokePosition">
+                    <option value="outside" ${node.data.strokePosition === "outside" ? "selected" : ""}>Outside</option>
+                    <option value="inside" ${node.data.strokePosition === "inside" ? "selected" : ""}>Inside</option>
+                  </select>
+                </div>
+                ${renderFillControls("stroke", "Stroke Fill", node.data, { solid: "#ffffff", end: "#b9c6e3" })}
+              </div>
+            </div>
+
+            <div class="buttonsc-fill-pair">
+              <div class="buttonsc-fill-card">
+                <div class="field-header-row">
+                  <div class="field-label" style="margin-bottom:0;">Corner Radius</div>
+                  <button class="node-icon-btn inline-icon-btn radius-link-btn" type="button" data-action="toggle-radius-link" title="${
+                    node.data.radiusLinked ? "Linked corners" : "Unlinked corners"
+                  }" aria-label="Toggle linked corner radius">
+                    ${
+                      node.data.radiusLinked
+                        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10.6 5.3"/><path d="M14 11a5 5 0 0 0-7.07 0L5.52 12.4a5 5 0 0 0 7.07 7.07l.71-.71"/></svg>`
+                        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a5 5 0 0 1 1.46-3.54l1.12-1.12a5 5 0 0 1 7.07 7.07l-1.12 1.12A5 5 0 0 1 14 17"/><path d="M15 12a5 5 0 0 1-1.46 3.54l-1.12 1.12a5 5 0 0 1-7.07-7.07l1.12-1.12A5 5 0 0 1 10 7"/></svg>`
+                    }
+                  </button>
+                </div>
+                <div class="color-mode-block" style="${node.data.radiusLinked ? "" : "display:none;"}">
+                  <div class="field-label">All Corners</div>
+                  <input class="num-input" data-field="radius" type="number" min="0" value="${node.data.radius}">
+                </div>
+                <div class="color-mode-block" style="${node.data.radiusLinked ? "display:none;" : ""}">
+                  <div class="buttonsc-triple-row">
+                    <div>
+                      <div class="field-label">Top Left</div>
+                      <input class="num-input" data-field="radiusTL" type="number" min="0" value="${radiusValues.tl}">
+                    </div>
+                    <div>
+                      <div class="field-label">Top Right</div>
+                      <input class="num-input" data-field="radiusTR" type="number" min="0" value="${radiusValues.tr}">
+                    </div>
+                    <div>
+                      <div class="field-label">Bottom Right</div>
+                      <input class="num-input" data-field="radiusBR" type="number" min="0" value="${radiusValues.br}">
+                    </div>
+                  </div>
+                  <div style="margin-top:8px; max-width: calc((100% - 16px) / 3);">
+                    <div class="field-label">Bottom Left</div>
+                    <input class="num-input" data-field="radiusBL" type="number" min="0" value="${radiusValues.bl}">
+                  </div>
+                </div>
+              </div>
+              <div class="buttonsc-fill-card">
+                <div class="color-mode-block" style="${node.data.shadowMode === "custom" ? "" : "display:none;"}">
+                  <div class="buttonsc-triple-row">
+                    <div>
+                      <div class="field-label">Offset X</div>
+                      <input class="num-input" data-field="shadowX" type="number" value="${node.data.shadowX}">
+                    </div>
+                    <div>
+                      <div class="field-label">Offset Y</div>
+                      <input class="num-input" data-field="shadowY" type="number" value="${node.data.shadowY}">
+                    </div>
+                    <div>
+                      <div class="field-label">Blur</div>
+                      <input class="num-input" data-field="shadowBlur" type="number" min="0" value="${node.data.shadowBlur}">
+                    </div>
+                  </div>
+                  <div class="buttonsc-top-grid" style="grid-template-columns: 1fr 1.8fr 60px; margin-top:8px;">
+                    <div>
+                      <div class="field-label">Spread</div>
+                      <input class="num-input" data-field="shadowSpread" type="number" value="${node.data.shadowSpread}">
+                    </div>
+                    <div>
+                      <div class="field-label">Shadow Color</div>
+                      <input class="text-input" data-field="shadowColor" type="text" value="${escapeHtml(node.data.shadowColor)}" placeholder="#1c2740">
+                    </div>
+                    <div>
+                      <div class="field-label">&nbsp;</div>
+                      <input class="color-wheel-input" data-field="shadowColorPicker" type="color" value="${escapeHtml(
+                        normalizeHex(node.data.shadowColor, "#1c2740")
+                      )}" title="Open color picker">
+                    </div>
+                  </div>
+                </div>
+                <div class="small-note">
+                  Quick edit button node. Use this when you want fast styling without connecting lots of separate nodes.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (node.type === "position") {
+          body = `
+            <div class="row">
+              <div>
+                <div class="field-label">X</div>
+                <input class="num-input" data-field="x" type="number" value="${
+                  node.data.x
+                }">
+              </div>
+              <div>
+                <div class="field-label">Y</div>
+                <input class="num-input" data-field="y" type="number" value="${
+                  node.data.y
+                }">
+              </div>
+            </div>
+
+            <div>
+              <div class="field-label">Align</div>
+              <select class="select-input" data-field="align">
+                <option value="left" ${
+                  node.data.align === "left" ? "selected" : ""
+                }>Left</option>
+                <option value="center" ${
+                  node.data.align === "center" ? "selected" : ""
+                }>Center</option>
+                <option value="right" ${
+                  node.data.align === "right" ? "selected" : ""
+                }>Right</option>
+              </select>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port position out" data-port-kind="out" data-port-role="position"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">POSITION</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "scale") {
+          body = `
+            <div>
+              <div class="field-label">Mode</div>
+              <select class="select-input" data-field="mode">
+                <option value="scale" ${
+                  node.data.mode === "scale" ? "selected" : ""
+                }>Scale</option>
+                <option value="size" ${
+                  node.data.mode === "size" ? "selected" : ""
+                }>Size</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="field-label">Affects</div>
+              <select class="select-input" data-field="target">
+                <option value="button" ${
+                  node.data.target === "button" ? "selected" : ""
+                }>Button</option>
+                <option value="text" ${
+                  node.data.target === "text" ? "selected" : ""
+                }>Text</option>
+              </select>
+            </div>
+
+            <div class="scale-scale-block" style="${
+              node.data.mode === "scale" ? "" : "display:none;"
+            }">
+              <div class="field-label">Scale</div>
+              <input class="num-input" data-field="scale" type="number" step="0.1" value="${
+                node.data.scale
+              }">
+            </div>
+
+            <div class="scale-size-block" style="${
+              node.data.mode === "size" ? "" : "display:none;"
+            }">
+              <div class="row">
+                <div>
+                  <div class="field-label">W</div>
+                  <input class="num-input" data-field="width" type="number" value="${
+                    node.data.width
+                  }">
+                </div>
+                <div>
+                  <div class="field-label">H</div>
+                  <input class="num-input" data-field="height" type="number" value="${
+                    node.data.height
+                  }">
+                </div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port scale out" data-port-kind="out" data-port-role="scale"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">SCALE</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "color") {
+          body = `
+            <div>
+              <div class="field-label">Fill Type</div>
+              <select class="select-input" data-field="mode">
+                <option value="solid" ${
+                  node.data.mode === "solid" ? "selected" : ""
+                }>Solid</option>
+                <option value="linear" ${
+                  node.data.mode === "linear" ? "selected" : ""
+                }>Linear Gradient</option>
+                <option value="radial" ${
+                  node.data.mode === "radial" ? "selected" : ""
+                }>Radial Gradient</option>
+                <option value="conic" ${
+                  node.data.mode === "conic" ? "selected" : ""
+                }>Conic Gradient</option>
+              </select>
+            </div>
+
+            <div class="color-mode-block color-solid-block" style="${
+              node.data.mode === "solid" ? "" : "display:none;"
+            }">
+              <div>
+                <div class="field-label">Color Hex</div>
+                <div class="color-picker-row">
+                  <input class="text-input" data-field="solid" type="text" value="${escapeHtml(
+                    node.data.solid
+                  )}" placeholder="#2e7bf5">
+                  <input class="color-wheel-input" data-field="solidPicker" type="color" value="${escapeHtml(
+                    normalizeHex(node.data.solid, "#2e7bf5")
+                  )}" title="Open color picker">
+                </div>
+              </div>
+            </div>
+
+            <div class="color-mode-block color-gradient-block" style="${
+              node.data.mode !== "solid" ? "" : "display:none;"
+            }">
+              <div class="row">
+                <div>
+                  <div class="field-label">Start Hex</div>
+                  <div class="color-picker-row">
+                    <input class="text-input" data-field="start" type="text" value="${escapeHtml(
+                      node.data.start
+                    )}" placeholder="#2e7bf5">
+                    <input class="color-wheel-input" data-field="startPicker" type="color" value="${escapeHtml(
+                      normalizeHex(node.data.start, "#2e7bf5")
+                    )}" title="Open color picker">
+                  </div>
+                </div>
+                <div>
+                  <div class="field-label">End Hex</div>
+                  <div class="color-picker-row">
+                    <input class="text-input" data-field="end" type="text" value="${escapeHtml(
+                      node.data.end
+                    )}" placeholder="#215fc0">
+                    <input class="color-wheel-input" data-field="endPicker" type="color" value="${escapeHtml(
+                      normalizeHex(node.data.end, "#215fc0")
+                    )}" title="Open color picker">
+                  </div>
+                </div>
+              </div>
+
+              <div class="color-linear-block" style="${
+                node.data.mode === "linear" ? "" : "display:none;"
+              }">
+                <div class="field-label">Angle</div>
+                <input class="num-input" data-field="angle" type="number" value="${
+                  node.data.angle
+                }">
+              </div>
+
+              <div class="color-radial-block" style="${
+                node.data.mode === "radial" ? "" : "display:none;"
+              }">
+                <div class="row">
+                  <div>
+                    <div class="field-label">Shape</div>
+                    <select class="select-input" data-field="radialShape">
+                      <option value="circle" ${
+                        node.data.radialShape === "circle" ? "selected" : ""
+                      }>Circle</option>
+                      <option value="ellipse" ${
+                        node.data.radialShape === "ellipse" ? "selected" : ""
+                      }>Ellipse</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div class="field-label">Position</div>
+                    <select class="select-input" data-field="radialPosition">
+                      <option value="center" ${
+                        node.data.radialPosition === "center" ? "selected" : ""
+                      }>Center</option>
+                      <option value="top" ${
+                        node.data.radialPosition === "top" ? "selected" : ""
+                      }>Top</option>
+                      <option value="bottom" ${
+                        node.data.radialPosition === "bottom" ? "selected" : ""
+                      }>Bottom</option>
+                      <option value="left" ${
+                        node.data.radialPosition === "left" ? "selected" : ""
+                      }>Left</option>
+                      <option value="right" ${
+                        node.data.radialPosition === "right" ? "selected" : ""
+                      }>Right</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="color-conic-block" style="${
+                node.data.mode === "conic" ? "" : "display:none;"
+              }">
+                <div class="field-label">Start Angle</div>
+                <input class="num-input" data-field="conicAngle" type="number" value="${
+                  node.data.conicAngle
+                }">
+              </div>
+            </div>
+
+            <div>
+              <div class="field-label">Preview</div>
+              <div class="color-preview" style="background:${escapeHtml(
+                buildColorFill(node.data)
+              )};"></div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port color out" data-port-kind="out" data-port-role="color"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">COLOR</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "textcolor") {
+          body = `
+            <div>
+              <div class="field-label">Text Color</div>
+              <div class="color-picker-row">
+                <input class="text-input" data-field="color" type="text" value="${escapeHtml(
+                  node.data.color
+                )}" placeholder="#ffffff">
+                <input class="color-wheel-input" data-field="colorPicker" type="color" value="${escapeHtml(
+                  normalizeHex(node.data.color, "#ffffff")
+                )}" title="Open color picker">
+              </div>
+            </div>
+
+            <div>
+              <div class="field-label">Preview</div>
+              <div class="color-preview" style="background:${escapeHtml(
+                normalizeHex(node.data.color, "#ffffff")
+              )};"></div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port textColor out" data-port-kind="out" data-port-role="textColor"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">TEXT</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "background") {
+          body = `
+            <div>
+              <div class="field-label">Fill Type</div>
+              <select class="select-input" data-field="mode">
+                <option value="solid" ${
+                  node.data.mode === "solid" ? "selected" : ""
+                }>Solid</option>
+                <option value="linear" ${
+                  node.data.mode === "linear" ? "selected" : ""
+                }>Linear Gradient</option>
+                <option value="radial" ${
+                  node.data.mode === "radial" ? "selected" : ""
+                }>Radial Gradient</option>
+                <option value="conic" ${
+                  node.data.mode === "conic" ? "selected" : ""
+                }>Conic Gradient</option>
+              </select>
+            </div>
+
+            <div class="color-mode-block color-solid-block" style="${
+              node.data.mode === "solid" ? "" : "display:none;"
+            }">
+              <div>
+                <div class="field-label">Color Hex</div>
+                <div class="color-picker-row">
+                  <input class="text-input" data-field="solid" type="text" value="${escapeHtml(
+                    node.data.solid
+                  )}" placeholder="#eef1f6">
+                  <input class="color-wheel-input" data-field="solidPicker" type="color" value="${escapeHtml(
+                    normalizeHex(node.data.solid, "#eef1f6")
+                  )}" title="Open color picker">
+                </div>
+              </div>
+            </div>
+
+            <div class="color-mode-block color-gradient-block" style="${
+              node.data.mode !== "solid" ? "" : "display:none;"
+            }">
+              <div class="row">
+                <div>
+                  <div class="field-label">Start Hex</div>
+                  <div class="color-picker-row">
+                    <input class="text-input" data-field="start" type="text" value="${escapeHtml(
+                      node.data.start
+                    )}" placeholder="#eef1f6">
+                    <input class="color-wheel-input" data-field="startPicker" type="color" value="${escapeHtml(
+                      normalizeHex(node.data.start, "#eef1f6")
+                    )}" title="Open color picker">
+                  </div>
+                </div>
+                <div>
+                  <div class="field-label">End Hex</div>
+                  <div class="color-picker-row">
+                    <input class="text-input" data-field="end" type="text" value="${escapeHtml(
+                      node.data.end
+                    )}" placeholder="#dce6f2">
+                    <input class="color-wheel-input" data-field="endPicker" type="color" value="${escapeHtml(
+                      normalizeHex(node.data.end, "#dce6f2")
+                    )}" title="Open color picker">
+                  </div>
+                </div>
+              </div>
+
+              <div class="color-linear-block" style="${
+                node.data.mode === "linear" ? "" : "display:none;"
+              }">
+                <div class="field-label">Angle</div>
+                <input class="num-input" data-field="angle" type="number" value="${
+                  node.data.angle
+                }">
+              </div>
+
+              <div class="color-radial-block" style="${
+                node.data.mode === "radial" ? "" : "display:none;"
+              }">
+                <div class="row">
+                  <div>
+                    <div class="field-label">Shape</div>
+                    <select class="select-input" data-field="radialShape">
+                      <option value="circle" ${
+                        node.data.radialShape === "circle" ? "selected" : ""
+                      }>Circle</option>
+                      <option value="ellipse" ${
+                        node.data.radialShape === "ellipse" ? "selected" : ""
+                      }>Ellipse</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div class="field-label">Position</div>
+                    <select class="select-input" data-field="radialPosition">
+                      <option value="center" ${
+                        node.data.radialPosition === "center" ? "selected" : ""
+                      }>Center</option>
+                      <option value="top" ${
+                        node.data.radialPosition === "top" ? "selected" : ""
+                      }>Top</option>
+                      <option value="bottom" ${
+                        node.data.radialPosition === "bottom" ? "selected" : ""
+                      }>Bottom</option>
+                      <option value="left" ${
+                        node.data.radialPosition === "left" ? "selected" : ""
+                      }>Left</option>
+                      <option value="right" ${
+                        node.data.radialPosition === "right" ? "selected" : ""
+                      }>Right</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="color-conic-block" style="${
+                node.data.mode === "conic" ? "" : "display:none;"
+              }">
+                <div class="field-label">Start Angle</div>
+                <input class="num-input" data-field="conicAngle" type="number" value="${
+                  node.data.conicAngle
+                }">
+              </div>
+            </div>
+
+            <div>
+              <div class="field-label">Preview</div>
+              <div class="color-preview" style="background:${escapeHtml(
+                buildColorFill(node.data)
+              )};"></div>
+            </div>
+          `;
+        }
+
+        if (node.type === "stroke") {
+          body = `
+            <div class="row">
+              <div>
+                <div class="field-label">Width</div>
+                <input class="num-input" data-field="width" type="number" min="0" step="1" value="${
+                  node.data.width
+                }">
+              </div>
+              <div>
+                <div class="field-label">Side</div>
+                <select class="select-input" data-field="position">
+                  <option value="outside" ${
+                    node.data.position === "outside" ? "selected" : ""
+                  }>Outside</option>
+                  <option value="inside" ${
+                    node.data.position === "inside" ? "selected" : ""
+                  }>Inside</option>
+                </select>
+              </div>
+            </div>
+            ${renderFillControls("", "Stroke Fill", node.data, { solid: "#ffffff", end: "#b9c6e3" })}
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port stroke out" data-port-kind="out" data-port-role="stroke"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">STROKE</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "textstroke") {
+          body = `
+            <div>
+              <div class="field-label">Width</div>
+              <input class="num-input" data-field="width" type="number" min="0" step="1" value="${
+                node.data.width
+              }">
+            </div>
+            ${renderFillControls("", "Text Stroke", node.data, { solid: "#1d2433", end: "#43516f" })}
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port textStroke out" data-port-kind="out" data-port-role="textStroke"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">TEXT STROKE</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "shadow") {
+          body = `
+            <div>
+              <div class="field-label">Shadow</div>
+              <select class="select-input" data-field="mode">
+                <option value="none" ${node.data.mode === "none" ? "selected" : ""}>None</option>
+                <option value="custom" ${node.data.mode === "custom" ? "selected" : ""}>Custom</option>
+              </select>
+            </div>
+            <div class="color-mode-block" style="${node.data.mode === "custom" ? "" : "display:none;"}">
+              <div class="row">
+                <div>
+                  <div class="field-label">Offset X</div>
+                  <input class="num-input" data-field="x" type="number" value="${node.data.x}">
+                </div>
+                <div>
+                  <div class="field-label">Offset Y</div>
+                  <input class="num-input" data-field="y" type="number" value="${node.data.y}">
+                </div>
+              </div>
+              <div class="row">
+                <div>
+                  <div class="field-label">Blur</div>
+                  <input class="num-input" data-field="blur" type="number" min="0" value="${node.data.blur}">
+                </div>
+                <div>
+                  <div class="field-label">Spread</div>
+                  <input class="num-input" data-field="spread" type="number" value="${node.data.spread}">
+                </div>
+              </div>
+              <div>
+                <div class="field-label">Color</div>
+                <div class="color-picker-row">
+                  <input class="text-input" data-field="color" type="text" value="${escapeHtml(node.data.color)}" placeholder="#1c2740">
+                  <input class="color-wheel-input" data-field="colorPicker" type="color" value="${escapeHtml(
+                    normalizeHex(node.data.color, "#1c2740")
+                  )}" title="Open color picker">
+                </div>
+              </div>
+            </div>
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port shadow out" data-port-kind="out" data-port-role="shadow"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">SHADOW</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "radius") {
+          const radiusValues = getRadiusNodeValues(node.data);
+          body = `
+            <div class="field-header-row">
+              <div class="field-label" style="margin-bottom:0;">Corner Radius</div>
+              <button class="node-icon-btn inline-icon-btn radius-link-btn" type="button" data-action="toggle-radius-link" title="${
+                node.data.linked ? "Linked corners" : "Unlinked corners"
+              }" aria-label="Toggle linked corner radius">
+                ${
+                  node.data.linked
+                    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10.6 5.3"/><path d="M14 11a5 5 0 0 0-7.07 0L5.52 12.4a5 5 0 0 0 7.07 7.07l.71-.71"/></svg>`
+                    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a5 5 0 0 1 1.46-3.54l1.12-1.12a5 5 0 0 1 7.07 7.07l-1.12 1.12A5 5 0 0 1 14 17"/><path d="M15 12a5 5 0 0 1-1.46 3.54l-1.12 1.12a5 5 0 0 1-7.07-7.07l1.12-1.12A5 5 0 0 1 10 7"/></svg>`
+                }
+              </button>
+            </div>
+            <div class="color-mode-block" style="${node.data.linked ? "" : "display:none;"}">
+              <div class="field-label">All Corners</div>
+              <input class="num-input" data-field="all" type="number" min="0" value="${node.data.all}">
+            </div>
+            <div class="color-mode-block" style="${node.data.linked ? "display:none;" : ""}">
+              <div class="row">
+                <div>
+                  <div class="field-label">Top Left</div>
+                  <input class="num-input" data-field="tl" type="number" min="0" value="${radiusValues.tl}">
+                </div>
+                <div>
+                  <div class="field-label">Top Right</div>
+                  <input class="num-input" data-field="tr" type="number" min="0" value="${radiusValues.tr}">
+                </div>
+              </div>
+              <div class="row">
+                <div>
+                  <div class="field-label">Bottom Right</div>
+                  <input class="num-input" data-field="br" type="number" min="0" value="${radiusValues.br}">
+                </div>
+                <div>
+                  <div class="field-label">Bottom Left</div>
+                  <input class="num-input" data-field="bl" type="number" min="0" value="${radiusValues.bl}">
+                </div>
+              </div>
+            </div>
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port radius out" data-port-kind="out" data-port-role="radius"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">RADIUS</div>
+            </div>
+          `;
+        }
+
+        el.innerHTML = `
+          <div class="node-header">
+            <div class="node-title-row">
+              <span class="mini-dot dot-${node.type}"></span>
+              <span>${title}</span>
+            </div>
+            <div class="node-header-actions">
+              <span class="badge">${node.id.replace("node_", "#")}</span>
+              <button class="node-icon-btn copy-node-btn" type="button" title="Copy node" aria-label="Copy node">
+                ${getCopyIconSvg()}
+              </button>
+              <button class="node-icon-btn delete-node-btn" type="button" title="Delete node" aria-label="Delete node">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"/>
+                  <path d="M8 6V4h8v2"/>
+                  <path d="M19 6l-1 14H6L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="node-body">${body}</div>
+        `;
+
+        canvas.appendChild(el);
+
+        const header = el.querySelector(".node-header");
+        makeDraggable(el, header, node);
+
+        const deleteBtn = el.querySelector(".delete-node-btn");
+        deleteBtn?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          removeNode(node.id);
+        });
+
+        const copyBtn = el.querySelector(".copy-node-btn");
+        copyBtn?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          copyNode(node.id);
+        });
+
+        const radiusLinkBtn = el.querySelector(".radius-link-btn");
+        radiusLinkBtn?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (node.type !== "radius" && node.type !== "buttonsc") {
+            return;
+          }
+          if (node.type === "buttonsc") {
+            if (node.data.radiusLinked) {
+              const linkedValue = Math.max(0, Number(node.data.radius) || 0);
+              node.data.radiusTL = linkedValue;
+              node.data.radiusTR = linkedValue;
+              node.data.radiusBR = linkedValue;
+              node.data.radiusBL = linkedValue;
+            }
+            node.data.radiusLinked = !node.data.radiusLinked;
+            if (node.data.radiusLinked) {
+              const linkedValue = Math.max(0, Number(node.data.radiusTL) || 0);
+              node.data.radius = linkedValue;
+              node.data.radiusTL = linkedValue;
+              node.data.radiusTR = linkedValue;
+              node.data.radiusBR = linkedValue;
+              node.data.radiusBL = linkedValue;
+            }
+            refreshNode(node.id);
+            return;
+          }
+          if (node.data.linked) {
+            const linkedValue = Math.max(0, Number(node.data.all) || 0);
+            node.data.tl = linkedValue;
+            node.data.tr = linkedValue;
+            node.data.br = linkedValue;
+            node.data.bl = linkedValue;
+          }
+          node.data.linked = !node.data.linked;
+          if (node.data.linked) {
+            const linkedValue = Math.max(0, Number(node.data.tl) || 0);
+            node.data.all = linkedValue;
+            node.data.tl = linkedValue;
+            node.data.tr = linkedValue;
+            node.data.br = linkedValue;
+            node.data.bl = linkedValue;
+          }
+          refreshNode(node.id);
+        });
+
+        for (const input of el.querySelectorAll("input, select")) {
+          input.addEventListener("input", () => {
+            const field = input.dataset.field;
+            const value =
+              input.type === "number" ? Number(input.value) : input.value;
+
+            const mappedField = field.endsWith("Picker")
+              ? field.slice(0, -"Picker".length)
+              : null;
+
+            if (mappedField && Object.prototype.hasOwnProperty.call(node.data, mappedField)) {
+              node.data[mappedField] = value;
+              const textField = el.querySelector(
+                `.text-input[data-field="${mappedField}"]`
+              );
+              if (textField) {
+                textField.value = value;
+              }
+            } else {
+              node.data[field] = value;
+            }
+
+            if (
+              (node.type === "scale" && field === "mode") ||
+              (node.type === "color" && field === "mode") ||
+              (node.type === "background" && field === "mode") ||
+              (node.type === "shadow" && field === "mode") ||
+              (node.type === "stroke" && field === "mode") ||
+              (node.type === "textstroke" && field === "mode") ||
+              (node.type === "buttonsc" &&
+                [
+                  "scaleMode",
+                  "buttonFillMode",
+                  "strokeMode",
+                  "shadowMode",
+                ].includes(field))
+            ) {
+              refreshNode(node.id);
+              return;
+            }
+
+            if (node.type === "color") {
+              const nodeEl = canvas.querySelector(
+                `.node[data-node-id="${node.id}"]`
+              );
+              const previewSwatch = nodeEl?.querySelector(".color-preview");
+              const solidPicker = nodeEl?.querySelector(
+                '.color-wheel-input[data-field="solidPicker"]'
+              );
+              const startPicker = nodeEl?.querySelector(
+                '.color-wheel-input[data-field="startPicker"]'
+              );
+              const endPicker = nodeEl?.querySelector(
+                '.color-wheel-input[data-field="endPicker"]'
+              );
+              if (previewSwatch) {
+                previewSwatch.style.background = buildColorFill(node.data);
+              }
+              if (solidPicker) {
+                solidPicker.value = normalizeHex(node.data.solid, "#2e7bf5");
+              }
+              if (startPicker) {
+                startPicker.value = normalizeHex(node.data.start, "#2e7bf5");
+              }
+              if (endPicker) {
+                endPicker.value = normalizeHex(node.data.end, "#215fc0");
+              }
+            }
+
+            if (node.type === "textcolor") {
+              const nodeEl = canvas.querySelector(
+                `.node[data-node-id="${node.id}"]`
+              );
+              const previewSwatch = nodeEl?.querySelector(".color-preview");
+              const picker = nodeEl?.querySelector(
+                '.color-wheel-input[data-field="colorPicker"]'
+              );
+              const nextColor = normalizeHex(node.data.color, "#ffffff");
+              if (previewSwatch) {
+                previewSwatch.style.background = nextColor;
+              }
+              if (picker && picker.value !== nextColor) {
+                picker.value = nextColor;
+              }
+            }
+
+            if (node.type === "background") {
+              const nodeEl = canvas.querySelector(
+                `.node[data-node-id="${node.id}"]`
+              );
+              const previewSwatch = nodeEl?.querySelector(".color-preview");
+              const solidPicker = nodeEl?.querySelector(
+                '.color-wheel-input[data-field="solidPicker"]'
+              );
+              const startPicker = nodeEl?.querySelector(
+                '.color-wheel-input[data-field="startPicker"]'
+              );
+              const endPicker = nodeEl?.querySelector(
+                '.color-wheel-input[data-field="endPicker"]'
+              );
+              if (previewSwatch) {
+                previewSwatch.style.background = buildColorFill(node.data);
+              }
+              if (solidPicker) {
+                solidPicker.value = normalizeHex(node.data.solid, "#eef1f6");
+              }
+              if (startPicker) {
+                startPicker.value = normalizeHex(node.data.start, "#eef1f6");
+              }
+              if (endPicker) {
+                endPicker.value = normalizeHex(node.data.end, "#dce6f2");
+              }
+            }
+
+            if ((node.type === "button" || node.type === "buttonsc") && field === "text") {
+              updateLayerControls();
+            }
+
+            updatePreview();
+            drawConnections();
+          });
+        }
+
+        for (const port of el.querySelectorAll(".port")) {
+          port.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handlePortMouseDown(node, port, e);
+          });
+        }
+      }
+
+      function refreshNode(nodeId) {
+        const node = graph.nodes.find((n) => n.id === nodeId);
+        if (!node) {
+          return;
+        }
+        if (!isNodeVisible(node)) {
+          updatePreview();
+          drawConnections();
+          updateLayerControls();
+          return;
+        }
+        const old = canvas.querySelector(`.node[data-node-id="${nodeId}"]`);
+        if (old) {
+          old.remove();
+        }
+        renderNode(node);
+        drawConnections();
+        updatePreview();
+        updateLayerControls();
+      }
+
+      function makeDraggable(el, handle, node) {
+        let dragging = false;
+        let startX = 0;
+        let startY = 0;
+        let originX = 0;
+        let originY = 0;
+
+        handle.addEventListener("mousedown", (e) => {
+          if (e.target.closest(".port") || e.target.closest(".node-icon-btn")) {
+            return;
+          }
+
+          dragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          originX = node.x;
+          originY = node.y;
+          document.body.style.cursor = "grabbing";
+        });
+
+        function move(e) {
+          if (!dragging) {
+            return;
+          }
+
+          node.x = originX + (e.clientX - startX);
+          node.y = originY + (e.clientY - startY);
+          el.style.left = node.x + "px";
+          el.style.top = node.y + "px";
+          drawConnections();
+        }
+
+        function up() {
+          if (!dragging) {
+            return;
+          }
+
+          dragging = false;
+          document.body.style.cursor = "";
+          drawConnections();
+          updatePreview();
+        }
+
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+      }
+
+      function handlePortMouseDown(node, port, startEvent) {
+        const kind = port.dataset.portKind;
+        const role = port.dataset.portRole;
+
+        if (kind !== "out") {
+          return;
+        }
+
+        startEvent?.preventDefault();
+        const rect = getPortCenter(port);
+        activeWire = {
+          fromNodeId: node.id,
+          role,
+          startX: rect.x,
+          startY: rect.y,
+          mouseX: rect.x,
+          mouseY: rect.y,
+        };
+        document.body.classList.add("connecting-wire");
+
+        drawConnections();
+
+        function move(ev) {
+          ev.preventDefault();
+          const p = getCanvasPoint(ev.clientX, ev.clientY);
+          activeWire.mouseX = p.x;
+          activeWire.mouseY = p.y;
+          drawConnections();
+        }
+
+        function up(ev) {
+          window.removeEventListener("mousemove", move);
+          window.removeEventListener("mouseup", up);
+          document.body.classList.remove("connecting-wire");
+
+          const target = document.elementFromPoint(ev.clientX, ev.clientY);
+
+          if (target && target.classList.contains("port")) {
+            const inKind = target.dataset.portKind;
+            const inRole = target.dataset.portRole;
+            const targetNodeEl = target.closest(".node");
+
+            if (inKind === "in" && inRole === role && targetNodeEl) {
+              connectNodes(node.id, targetNodeEl.dataset.nodeId, role);
+            }
+          }
+
+          activeWire = null;
+          drawConnections();
+        }
+
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+      }
+
+      function connectNodes(fromNodeId, toNodeId, role) {
+        const from = graph.nodes.find((n) => n.id === fromNodeId);
+        const to = graph.nodes.find((n) => n.id === toNodeId);
+
+        if (!from || !to) {
+          return;
+        }
+
+        if (to.type !== "button") {
+          showStatus("Only connect into the Button node");
+          return;
+        }
+
+        graph.connections = graph.connections.filter(
+          (c) => !(c.toNodeId === toNodeId && c.role === role)
+        );
+
+        graph.connections.push({
+          fromNodeId,
+          toNodeId,
+          role,
+        });
+
+        if (role === "position") to.data.positionNodeId = fromNodeId;
+        if (role === "scale") to.data.scaleNodeId = fromNodeId;
+        if (role === "color") to.data.colorNodeId = fromNodeId;
+        if (role === "textColor") to.data.textColorNodeId = fromNodeId;
+        if (role === "stroke") to.data.strokeNodeId = fromNodeId;
+        if (role === "textStroke") to.data.textStrokeNodeId = fromNodeId;
+        if (role === "shadow") to.data.shadowNodeId = fromNodeId;
+        if (role === "radius") to.data.radiusNodeId = fromNodeId;
+
+        showStatus(`${role.charAt(0).toUpperCase() + role.slice(1)} connected`);
+        drawConnections();
+        updatePreview();
+      }
+
+      function drawConnections() {
+        const paths = [];
+
+        for (const c of graph.connections) {
+          const fromNode = graph.nodes.find((n) => n.id === c.fromNodeId);
+          const toNode = graph.nodes.find((n) => n.id === c.toNodeId);
+          if (!fromNode || !toNode || !isNodeVisible(fromNode) || !isNodeVisible(toNode)) {
+            continue;
+          }
+
+          const fromPort = getPortElement(c.fromNodeId, "out", c.role);
+          const toPort = getPortElement(c.toNodeId, "in", c.role);
+
+          if (!fromPort || !toPort) {
+            continue;
+          }
+
+          const a = getPortCenter(fromPort);
+          const b = getPortCenter(toPort);
+          paths.push(svgPath(a.x, a.y, b.x, b.y, roleColor(c.role), 3));
+        }
+
+        if (activeWire) {
+          paths.push(
+            svgPath(
+              activeWire.startX,
+              activeWire.startY,
+              activeWire.mouseX,
+              activeWire.mouseY,
+              roleColor(activeWire.role),
+              3,
+              true
+            )
+          );
+        }
+
+        connectionsSvg.innerHTML = paths.join("");
+      }
+
+      function roleColor(role) {
+        if (role === "position") return "#d48b42";
+        if (role === "scale") return "#8971ff";
+        if (role === "color") return "#d85f95";
+        if (role === "textColor") return "#59d0d8";
+        if (role === "stroke") return "#f0c36a";
+        if (role === "textStroke") return "#76c7ff";
+        if (role === "shadow") return "#8a93b8";
+        if (role === "radius") return "#9ae27d";
+        return "#85b0ff";
+      }
+
+      function svgPath(x1, y1, x2, y2, color, width, dashed = false) {
+        const dx = Math.max(80, Math.abs(x2 - x1) * 0.45);
+        const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${
+          x2 - dx
+        } ${y2}, ${x2} ${y2}`;
+
+        return `
+          <path d="${d}" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="${
+          width + 3
+        }" stroke-linecap="round"/>
+          <path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" ${
+          dashed ? 'stroke-dasharray="8 7"' : ""
+        }/>
+        `;
+      }
+
+      function getPortElement(nodeId, kind, role) {
+        const nodeEl = canvas.querySelector(`.node[data-node-id="${nodeId}"]`);
+        if (!nodeEl) {
+          return null;
+        }
+
+        return nodeEl.querySelector(
+          `.port[data-port-kind="${kind}"][data-port-role="${role}"]`
+        );
+      }
+
+      function getPortCenter(port) {
+        const canvasRect = canvas.getBoundingClientRect();
+        const r = port.getBoundingClientRect();
+
+        return {
+          x: r.left - canvasRect.left + r.width / 2,
+          y: r.top - canvasRect.top + r.height / 2,
+        };
+      }
+
+      function getCanvasPoint(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+
+        return {
+          x: clientX - rect.left,
+          y: clientY - rect.top,
+        };
+      }
+
+      function getButtonNodes() {
+        return graph.nodes.filter((n) => isButtonRootType(n.type));
+      }
+
+      function getLatestNodeByType(type) {
+        const matches = graph.nodes.filter((n) => n.type === type);
+        return matches.length ? matches[matches.length - 1] : null;
+      }
+
+      function getConnectedNode(buttonNode, role) {
+        const conn = graph.connections.find(
+          (c) => c.toNodeId === buttonNode.id && c.role === role
+        );
+
+        if (!conn) {
+          return null;
+        }
+
+        return graph.nodes.find((n) => n.id === conn.fromNodeId) || null;
+      }
+
+      function getInteractionNode(layerId, interactionKind, type) {
+        if (!layerId || !interactionKind) {
+          return null;
+        }
+        const matches = graph.nodes.filter(
+          (n) =>
+            n.layerId === layerId &&
+            n.interactionKind === interactionKind &&
+            n.type === type
+        );
+        return matches.length ? matches[matches.length - 1] : null;
+      }
+
+      function normalizeHex(value, fallback) {
+        const raw = String(value || "").trim();
+        if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw)) {
+          return raw;
+        }
+        return fallback;
+      }
+
+      function radialPositionCss(position) {
+        if (position === "top") return "center top";
+        if (position === "bottom") return "center bottom";
+        if (position === "left") return "left center";
+        if (position === "right") return "right center";
+        return "center center";
+      }
+
+      function buildColorFill(colorData) {
+        if (!colorData) {
+          return "linear-gradient(#2e7bf5,#215fc0)";
+        }
+
+        const mode = colorData.mode || "solid";
+        const solid = normalizeHex(colorData.solid, "#2e7bf5");
+        const start = normalizeHex(colorData.start, "#2e7bf5");
+        const end = normalizeHex(colorData.end, "#215fc0");
+
+        if (mode === "solid") {
+          return solid;
+        }
+
+        if (mode === "linear") {
+          const angle = Number.isFinite(Number(colorData.angle))
+            ? Number(colorData.angle)
+            : 180;
+          return `linear-gradient(${angle}deg, ${start}, ${end})`;
+        }
+
+        if (mode === "radial") {
+          const shape =
+            colorData.radialShape === "ellipse" ? "ellipse" : "circle";
+          const position = radialPositionCss(colorData.radialPosition);
+          return `radial-gradient(${shape} at ${position}, ${start}, ${end})`;
+        }
+
+        if (mode === "conic") {
+          const angle = Number.isFinite(Number(colorData.conicAngle))
+            ? Number(colorData.conicAngle)
+            : 0;
+          return `conic-gradient(from ${angle}deg, ${start}, ${end})`;
+        }
+
+        return solid;
+      }
+
+      function removeNode(nodeId) {
+        const node = graph.nodes.find((n) => n.id === nodeId);
+        if (!node) {
+          return;
+        }
+
+        if (isButtonRootType(node.type) && node.layerId) {
+          graph.nodes = graph.nodes.filter((n) => n.layerId !== node.layerId);
+          graph.connections = graph.connections.filter((c) => {
+            const fromNode = graph.nodes.find((n) => n.id === c.fromNodeId);
+            const toNode = graph.nodes.find((n) => n.id === c.toNodeId);
+            return fromNode && toNode;
+          });
+          const layerIndex = layers.findIndex((layer) => layer.id === node.layerId);
+          if (layerIndex >= 0) {
+            layers.splice(layerIndex, 1);
+          }
+          if (activeLayerId === node.layerId) {
+            activeLayerId = layers[0]?.id || null;
+            activeInteractionKind = null;
+          }
+        } else {
+          graph.nodes = graph.nodes.filter((n) => n.id !== nodeId);
+          graph.connections = graph.connections.filter(
+            (c) => c.fromNodeId !== nodeId && c.toNodeId !== nodeId
+          );
+          if (node.type === "background" && activeLayerId === "background") {
+            activeLayerId = layers[0]?.id || null;
+            activeInteractionKind = null;
+          }
+        }
+
+        for (const buttonNode of graph.nodes.filter((n) => n.type === "button")) {
+          if (buttonNode.data.positionNodeId === nodeId) buttonNode.data.positionNodeId = null;
+          if (buttonNode.data.scaleNodeId === nodeId) buttonNode.data.scaleNodeId = null;
+          if (buttonNode.data.colorNodeId === nodeId) buttonNode.data.colorNodeId = null;
+          if (buttonNode.data.textColorNodeId === nodeId) buttonNode.data.textColorNodeId = null;
+          if (buttonNode.data.strokeNodeId === nodeId) buttonNode.data.strokeNodeId = null;
+          if (buttonNode.data.textStrokeNodeId === nodeId) buttonNode.data.textStrokeNodeId = null;
+          if (buttonNode.data.shadowNodeId === nodeId) buttonNode.data.shadowNodeId = null;
+          if (buttonNode.data.radiusNodeId === nodeId) buttonNode.data.radiusNodeId = null;
+        }
+
+        updateLayerControls();
+        rerenderCanvas();
+        updatePreview();
+        showStatus(`${node.type} deleted`);
+      }
+
+      function updatePreview() {
+        const buttonNodes = getButtonNodes();
+        const backgroundNode = getLatestNodeByType("background");
+        const previewBackground = buildColorFill(backgroundNode ? backgroundNode.data : null);
+
+        preview.style.background = previewBackground;
+
+        if (!buttonNodes.length) {
+          preview.innerHTML = `<div class="preview-empty">No Button node found.</div>`;
+          return;
+        }
+
+        const buttonMarkup = buttonNodes
+          .map((buttonNode) => {
+            const isSimpleButton = buttonNode.type === "buttonsc";
+            const positionNode = isSimpleButton
+              ? { data: { x: buttonNode.data.x, y: buttonNode.data.y, align: buttonNode.data.align } }
+              : getConnectedNode(buttonNode, "position");
+            const scaleNode = isSimpleButton
+              ? {
+                  data: {
+                    mode: buttonNode.data.scaleMode,
+                    target: buttonNode.data.scaleTarget,
+                    scale: buttonNode.data.scale,
+                    width: buttonNode.data.width,
+                    height: buttonNode.data.height,
+                  },
+                }
+              : getConnectedNode(buttonNode, "scale");
+            const colorNode = isSimpleButton
+              ? {
+                  data: {
+                    mode: buttonNode.data.buttonFillMode,
+                    solid: buttonNode.data.buttonFillSolid,
+                    start: buttonNode.data.buttonFillStart,
+                    end: buttonNode.data.buttonFillEnd,
+                    angle: buttonNode.data.buttonFillAngle,
+                    radialShape: buttonNode.data.buttonFillRadialShape,
+                    radialPosition: buttonNode.data.buttonFillRadialPosition,
+                    conicAngle: buttonNode.data.buttonFillConicAngle,
+                  },
+                }
+              : getConnectedNode(buttonNode, "color");
+            const textColorNode = isSimpleButton
+              ? { data: { color: buttonNode.data.textColor } }
+              : getConnectedNode(buttonNode, "textColor");
+            const strokeNode = isSimpleButton
+              ? {
+                  data: {
+                    width: buttonNode.data.strokeWidth,
+                    position: buttonNode.data.strokePosition,
+                    mode: buttonNode.data.strokeMode,
+                    solid: buttonNode.data.strokeSolid,
+                    start: buttonNode.data.strokeStart,
+                    end: buttonNode.data.strokeEnd,
+                    angle: buttonNode.data.strokeAngle,
+                    radialShape: buttonNode.data.strokeRadialShape,
+                    radialPosition: buttonNode.data.strokeRadialPosition,
+                    conicAngle: buttonNode.data.strokeConicAngle,
+                  },
+                }
+              : getConnectedNode(buttonNode, "stroke");
+            const textStrokeNode = getConnectedNode(buttonNode, "textStroke");
+            const shadowNode = isSimpleButton
+              ? {
+                  data: {
+                    mode: buttonNode.data.shadowMode,
+                    x: buttonNode.data.shadowX,
+                    y: buttonNode.data.shadowY,
+                    blur: buttonNode.data.shadowBlur,
+                    spread: buttonNode.data.shadowSpread,
+                    color: buttonNode.data.shadowColor,
+                  },
+                }
+              : getConnectedNode(buttonNode, "shadow");
+            const radiusNode = isSimpleButton
+              ? {
+                  data: {
+                    linked: buttonNode.data.radiusLinked,
+                    all: buttonNode.data.radius,
+                    tl: buttonNode.data.radiusTL,
+                    tr: buttonNode.data.radiusTR,
+                    br: buttonNode.data.radiusBR,
+                    bl: buttonNode.data.radiusBL,
+                  },
+                }
+              : getConnectedNode(buttonNode, "radius");
+            const hoverOverrides = {
+              positionNode: getInteractionNode(buttonNode.layerId, "hover", "position"),
+              scaleNode: getInteractionNode(buttonNode.layerId, "hover", "scale"),
+              colorNode: getInteractionNode(buttonNode.layerId, "hover", "color"),
+              textColorNode: getInteractionNode(buttonNode.layerId, "hover", "textcolor"),
+              strokeNode: getInteractionNode(buttonNode.layerId, "hover", "stroke"),
+              textStrokeNode: getInteractionNode(buttonNode.layerId, "hover", "textstroke"),
+              shadowNode: getInteractionNode(buttonNode.layerId, "hover", "shadow"),
+              radiusNode: getInteractionNode(buttonNode.layerId, "hover", "radius"),
+            };
+            const clickOverrides = {
+              positionNode: getInteractionNode(buttonNode.layerId, "click", "position"),
+              scaleNode: getInteractionNode(buttonNode.layerId, "click", "scale"),
+              colorNode: getInteractionNode(buttonNode.layerId, "click", "color"),
+              textColorNode: getInteractionNode(buttonNode.layerId, "click", "textcolor"),
+              strokeNode: getInteractionNode(buttonNode.layerId, "click", "stroke"),
+              textStrokeNode: getInteractionNode(buttonNode.layerId, "click", "textstroke"),
+              shadowNode: getInteractionNode(buttonNode.layerId, "click", "shadow"),
+              radiusNode: getInteractionNode(buttonNode.layerId, "click", "radius"),
+            };
+
+            function buildButtonVisualState(overrides = {}) {
+              const resolvedPositionNode = overrides.positionNode || positionNode;
+              const resolvedScaleNode = overrides.scaleNode || scaleNode;
+              const resolvedColorNode = overrides.colorNode || colorNode;
+              const resolvedTextColorNode = overrides.textColorNode || textColorNode;
+              const resolvedStrokeNode = overrides.strokeNode || strokeNode;
+              const resolvedTextStrokeNode = overrides.textStrokeNode || textStrokeNode;
+              const resolvedShadowNode = overrides.shadowNode || shadowNode;
+              const resolvedRadiusNode = overrides.radiusNode || radiusNode;
+
+              let leftStyle = "120px";
+              let topStyle = "90px";
+              let transform = "";
+              let width = 140;
+              let height = 44;
+              let fontSize = 15;
+              const buttonFill = buildColorFill(resolvedColorNode ? resolvedColorNode.data : null);
+              const textColor = normalizeHex(
+                resolvedTextColorNode ? resolvedTextColorNode.data.color : "#ffffff",
+                "#ffffff"
+              );
+              const strokeWidth = Math.max(0, Number(resolvedStrokeNode?.data.width) || 0);
+              const strokeInside = resolvedStrokeNode?.data.position === "inside";
+              const strokeFill = buildColorFill(
+                resolvedStrokeNode ? resolvedStrokeNode.data : { mode: "solid", solid: "#ffffff" }
+              );
+              const radii = resolvedRadiusNode
+                ? getRadiusNodeValues(resolvedRadiusNode.data)
+                : { tl: 8, tr: 8, br: 8, bl: 8 };
+              const shadowCss = buildShadowCss(resolvedShadowNode ? resolvedShadowNode.data : null);
+
+              if (resolvedPositionNode) {
+                topStyle = `${resolvedPositionNode.data.y}px`;
+
+                if (resolvedPositionNode.data.align === "left") {
+                  leftStyle = `${resolvedPositionNode.data.x}px`;
+                } else if (resolvedPositionNode.data.align === "center") {
+                  leftStyle = "50%";
+                  transform += ` translateX(calc(-50% + ${resolvedPositionNode.data.x}px))`;
+                } else if (resolvedPositionNode.data.align === "right") {
+                  leftStyle = `calc(100% - ${resolvedPositionNode.data.x}px)`;
+                  transform += ` translateX(-100%)`;
+                }
+              }
+
+              if (resolvedScaleNode) {
+                if (resolvedScaleNode.data.target === "text") {
+                  if (resolvedScaleNode.data.mode === "scale") {
+                    const s = Number(resolvedScaleNode.data.scale) || 1;
+                    fontSize = Math.max(12, Math.min(72, 15 * s));
+                  } else {
+                    fontSize = Math.max(
+                      12,
+                      Math.min(72, Number(resolvedScaleNode.data.height) || 44)
+                    );
+                  }
+                } else {
+                  if (resolvedScaleNode.data.mode === "scale") {
+                    const s = Number(resolvedScaleNode.data.scale) || 1;
+                    width = 140 * s;
+                    height = 44 * s;
+                  } else {
+                    width = Number(resolvedScaleNode.data.width) || 140;
+                    height = Number(resolvedScaleNode.data.height) || 44;
+                  }
+                }
+              }
+
+              if (!resolvedScaleNode || resolvedScaleNode.data.target !== "text") {
+                fontSize = Math.max(12, Math.min(20, height * 0.34));
+              }
+              const outerRadii = strokeWidth && !strokeInside
+                ? outsetRadiusValues(radii, strokeWidth)
+                : radii;
+              const innerRadii = strokeWidth && strokeInside
+                ? insetRadiusValues(radii, strokeWidth)
+                : radii;
+              const wrapperWidth = strokeWidth && !strokeInside ? width + strokeWidth * 2 : width;
+              const wrapperHeight = strokeWidth && !strokeInside ? height + strokeWidth * 2 : height;
+              const innerWidth = strokeWidth && strokeInside ? Math.max(0, width - strokeWidth * 2) : width;
+              const innerHeight = strokeWidth && strokeInside ? Math.max(0, height - strokeWidth * 2) : height;
+              const offsetMargin = strokeWidth && !strokeInside ? -strokeWidth : 0;
+              const labelSvg = renderButtonLabelSvg(
+                buttonNode,
+                resolvedTextStrokeNode ? resolvedTextStrokeNode.data : { width: 0, mode: "solid", solid: "#1d2433" },
+                innerWidth || width,
+                innerHeight || height,
+                fontSize,
+                textColor
+              );
+
+              return {
+                leftStyle,
+                topStyle,
+                transform,
+                wrapperWidth,
+                wrapperHeight,
+                offsetMargin,
+                strokeWidth,
+                outerRadii,
+                strokeFill,
+                shadowCss,
+                innerWidth,
+                innerHeight,
+                innerRadii,
+                buttonFill,
+                labelSvg,
+              };
+            }
+
+            const baseState = buildButtonVisualState();
+            const hoverState = buildButtonVisualState(hoverOverrides);
+            const clickState = buildButtonVisualState(clickOverrides);
+
+            return `
+              <div
+                class="preview-btn-shell"
+                data-button-layer-id="${buttonNode.layerId}"
+                data-base-state='${escapeHtml(JSON.stringify(baseState))}'
+                data-hover-state='${escapeHtml(JSON.stringify(hoverState))}'
+                data-click-state='${escapeHtml(JSON.stringify(clickState))}'
+                style="
+                  left:${baseState.leftStyle};
+                  top:${baseState.topStyle};
+                  width:${baseState.wrapperWidth}px;
+                  height:${baseState.wrapperHeight}px;
+                  transform:${baseState.transform || "none"};
+                  position:absolute;
+                  margin-left:${baseState.offsetMargin}px;
+                  margin-top:${baseState.offsetMargin}px;
+                  padding:${baseState.strokeWidth > 0 ? baseState.strokeWidth : 0}px;
+                  border-radius:${radiusCss(baseState.outerRadii)};
+                  background:${baseState.strokeWidth > 0 ? baseState.strokeFill : "transparent"};
+                  box-shadow:${baseState.shadowCss};
+                "
+              >
+                <div
+                  class="preview-btn"
+                  style="
+                    width:${baseState.innerWidth}px;
+                    height:${baseState.innerHeight}px;
+                    border-radius:${radiusCss(baseState.innerRadii)};
+                    background:${baseState.buttonFill};
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    overflow:hidden;
+                  "
+                >
+                  <div class="preview-btn-label">${baseState.labelSvg}</div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        preview.innerHTML = buttonMarkup;
+
+        for (const shell of preview.querySelectorAll(".preview-btn-shell")) {
+          const inner = shell.querySelector(".preview-btn");
+          const label = shell.querySelector(".preview-btn-label");
+          const baseState = JSON.parse(shell.dataset.baseState);
+          const hoverState = JSON.parse(shell.dataset.hoverState);
+          const clickState = JSON.parse(shell.dataset.clickState);
+
+          const applyState = (state) => {
+            shell.style.left = state.leftStyle;
+            shell.style.top = state.topStyle;
+            shell.style.width = `${state.wrapperWidth}px`;
+            shell.style.height = `${state.wrapperHeight}px`;
+            shell.style.transform = state.transform || "none";
+            shell.style.marginLeft = `${state.offsetMargin}px`;
+            shell.style.marginTop = `${state.offsetMargin}px`;
+            shell.style.padding = `${state.strokeWidth > 0 ? state.strokeWidth : 0}px`;
+            shell.style.borderRadius = radiusCss(state.outerRadii);
+            shell.style.background = state.strokeWidth > 0 ? state.strokeFill : "transparent";
+            shell.style.boxShadow = state.shadowCss;
+
+            inner.style.width = `${state.innerWidth}px`;
+            inner.style.height = `${state.innerHeight}px`;
+            inner.style.borderRadius = radiusCss(state.innerRadii);
+            inner.style.background = state.buttonFill;
+            label.innerHTML = state.labelSvg;
+          };
+
+          let clickTimer = null;
+          shell.addEventListener("mouseenter", () => {
+            applyState(hoverState);
+          });
+          shell.addEventListener("mouseleave", () => {
+            if (clickTimer) {
+              clearTimeout(clickTimer);
+              clickTimer = null;
+            }
+            applyState(baseState);
+          });
+          shell.addEventListener("click", () => {
+            applyState(clickState);
+            if (clickTimer) {
+              clearTimeout(clickTimer);
+            }
+            clickTimer = setTimeout(() => {
+              applyState(baseState);
+              clickTimer = null;
+            }, 180);
+          });
+        }
+      }
+
+      function nextSpawnPosition(type) {
+        const typeCount = graph.nodes.filter(
+          (n) =>
+            n.type === type &&
+            (
+              type === "background" ||
+              isButtonRootType(type) ||
+              (
+                n.layerId === activeLayerId &&
+                (n.interactionKind || null) === (activeInteractionKind || null)
+              )
+            )
+        ).length;
+        const base = {
+          button: { x: 340, y: 160 },
+          buttonsc: { x: 340, y: 160 },
+          position: { x: 70, y: 110 },
+          scale: { x: 70, y: 330 },
+          color: { x: 70, y: 540 },
+          textcolor: { x: 70, y: 760 },
+          stroke: { x: 70, y: 980 },
+          textstroke: { x: 70, y: 1180 },
+          shadow: { x: 340, y: 980 },
+          radius: { x: 340, y: 1180 },
+          background: { x: 340, y: 160 },
+        }[type] || { x: 120, y: 120 };
+
+        const wrap = document.getElementById("canvas-wrap");
+        const maxX = Math.max(20, wrap.clientWidth - 260);
+        const maxY = Math.max(20, wrap.clientHeight - 360);
+        const nextX = base.x + typeCount * 30;
+        const nextY = base.y + typeCount * 30;
+
+        return {
+          x: Math.min(nextX, maxX),
+          y: Math.min(nextY, maxY),
+        };
+      }
+
+      function setupSidebar() {
+        for (const item of document.querySelectorAll(".node-list-item")) {
+          item.addEventListener("click", () => {
+            const type = item.dataset.nodeType;
+            const spawnPos = nextSpawnPosition(type);
+
+            if (isButtonRootType(type)) {
+              const layer = createLayer();
+              activeLayerId = layer.id;
+              activeInteractionKind = null;
+              updateLayerControls();
+              makeNode(type, spawnPos.x, spawnPos.y, {}, layer.id, null);
+              rerenderCanvas();
+              showStatus(`${type === "buttonsc" ? "Button SC" : layer.name} created`);
+              return;
+            }
+
+            if (activeInteractionKind && (isButtonRootType(type) || type === "background")) {
+              showStatus("Use style nodes inside hover/click layers");
+              return;
+            }
+
+            if (type !== "background" && !activeLayerId) {
+              showStatus("Add a Button first to create a layer");
+              return;
+            }
+
+            if (type === "background") {
+              activeLayerId = "background";
+              activeInteractionKind = null;
+            }
+
+            makeNode(
+              type,
+              spawnPos.x,
+              spawnPos.y,
+              {},
+              type === "background" ? null : activeLayerId,
+              type === "background" ? null : activeInteractionKind
+            );
+            updateLayerControls();
+            rerenderCanvas();
+          });
+        }
+
+        layerList.addEventListener("click", (e) => {
+          const copyBtn = e.target.closest("[data-copy-layer-id]");
+          if (copyBtn) {
+            e.stopPropagation();
+            duplicateLayer(copyBtn.dataset.copyLayerId);
+            return;
+          }
+          const item = e.target.closest("[data-layer-id]");
+          if (!item) {
+            return;
+          }
+          setActiveLayer(
+            item.dataset.layerId,
+            item.dataset.interactionKind || null
+          );
+        });
+
+        layerList.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter" && e.key !== " ") {
+            return;
+          }
+          const item = e.target.closest("[data-layer-id]");
+          if (!item) {
+            return;
+          }
+          e.preventDefault();
+          setActiveLayer(
+            item.dataset.layerId,
+            item.dataset.interactionKind || null
+          );
+        });
+      }
+
+      function resetGraph() {
+        graph.nodes.length = 0;
+        graph.connections.length = 0;
+        nodeIdCounter = 1;
+        layerIdCounter = 1;
+        layers.length = 0;
+        activeLayerId = null;
+        copiedNodePayload = null;
+
+        canvas.querySelectorAll(".node").forEach((n) => n.remove());
+        connectionsSvg.innerHTML = "";
+
+        updateLayerControls();
+        drawConnections();
+        updatePreview();
+        showStatus("Canvas cleared");
+      }
+
+      document.getElementById("resetBtn").addEventListener("click", resetGraph);
+
+      document.getElementById("centerBtn").addEventListener("click", () => {
+        const wrap = document.getElementById("canvas-wrap");
+        wrap.scrollLeft = 0;
+        wrap.scrollTop = 0;
+        showStatus("Centered");
+      });
+
+      window.addEventListener("keydown", (e) => {
+        const isPaste = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v";
+        if (!isPaste) {
+          return;
+        }
+
+        const target = e.target;
+        if (
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement ||
+          target?.isContentEditable
+        ) {
+          return;
+        }
+
+        e.preventDefault();
+        pasteCopiedNode();
+      });
+
+      resetGraph();
+      setupSidebar();
+    </script>
+  </body>
+</html>
