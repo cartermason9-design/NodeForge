@@ -57,6 +57,18 @@
         user-select: none;
       }
 
+      body.num-scrubbing,
+      body.num-scrubbing * {
+        cursor: ew-resize !important;
+      }
+
+      body.sidebar-resizing,
+      body.sidebar-resizing * {
+        cursor: ns-resize !important;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
       body.panning-canvas {
         cursor: grabbing;
         -webkit-user-select: none;
@@ -78,6 +90,10 @@
         display: flex;
         align-items: center;
         gap: 6px;
+      }
+
+      .top-group-right {
+        margin-left: auto;
       }
 
       .top-divider {
@@ -144,6 +160,7 @@
       }
 
       #sidebar {
+        --sidebar-split: 320px;
         background: linear-gradient(#28282d, #242429);
         border-right: 1px solid var(--line2);
         display: flex;
@@ -191,11 +208,12 @@
         padding: 10px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        max-height: 320px;
+        gap: 1px;
+        height: var(--sidebar-split);
         overflow-y: auto;
         overflow-x: hidden;
         flex: 0 0 auto;
+        min-height: 120px;
         scrollbar-width: none;
         -ms-overflow-style: none;
       }
@@ -236,6 +254,230 @@
         border-radius: 12px;
         background: linear-gradient(#2a2c32, #24262c);
         box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+      }
+
+      .help-dialog {
+        position: relative;
+        width: min(560px, calc(100vw - 48px));
+        height: min(72vh, 720px);
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        border: 1px solid #1a1c21;
+        border-radius: 12px;
+        background: linear-gradient(#2a2c32, #24262c);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+      }
+
+      .help-dialog-scroll-wrap {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+      }
+
+      #help-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      #help-modal[hidden] {
+        display: none;
+      }
+
+      .help-dialog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .help-dialog-title {
+        font-size: 13px;
+        color: #eef3ff;
+        letter-spacing: 0.2px;
+      }
+
+      .help-dialog-body {
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        scrollbar-width: thin;
+        scrollbar-color: #5f6a7d #171a20;
+      }
+
+      .help-dialog-body::-webkit-scrollbar {
+        width: 12px;
+      }
+
+      .help-dialog-body::-webkit-scrollbar-track {
+        background: #171a20;
+        border-radius: 999px;
+      }
+
+      .help-dialog-body::-webkit-scrollbar-thumb {
+        background: linear-gradient(#5f6a7d, #475161);
+        border: 2px solid #171a20;
+        border-radius: 999px;
+      }
+
+      .help-dialog-body::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(#738097, #566173);
+      }
+
+      .help-back-to-top {
+        position: absolute;
+        right: 24px;
+        bottom: 10px;
+        width: 32px;
+        height: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(#3a3f49, #2b3038);
+        color: #eef3ff;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(6px);
+        transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease;
+        z-index: 2;
+      }
+
+      .help-back-to-top:hover {
+        filter: brightness(1.08);
+      }
+
+      .help-back-to-top.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+      }
+
+      .help-intro {
+        font-size: 12px;
+        line-height: 1.55;
+        color: #aeb7c6;
+        padding: 4px 2px 8px;
+        flex: 0 0 auto;
+      }
+
+      .help-section {
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 0;
+        background: rgba(255, 255, 255, 0.03);
+        overflow: hidden;
+        flex: 0 0 auto;
+      }
+
+      .help-section summary {
+        list-style: none;
+        cursor: pointer;
+        min-height: 54px;
+        padding: 10px 12px;
+        color: #eef3ff;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-shrink: 0;
+      }
+
+      .help-section summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .help-section summary::after {
+        content: "+";
+        color: #96a0b3;
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      .help-section[open] summary::after {
+        content: "-";
+      }
+
+      .help-section-body {
+        padding: 0 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .help-section-summary-copy {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+        min-width: 0;
+        min-height: 34px;
+      }
+
+      .help-section-summary-title {
+        font-size: 12px;
+        color: #eef3ff;
+      }
+
+      .help-section-summary-subtitle {
+        font-size: 10px;
+        color: #96a0b3;
+        line-height: 1.35;
+      }
+
+      .help-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .help-item:first-child {
+        border-top: none;
+        padding-top: 2px;
+      }
+
+      .help-item-visual {
+        width: 56px;
+        height: 44px;
+        flex: 0 0 auto;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(#20242c, #171a20);
+        display: grid;
+        place-items: center;
+      }
+
+      .help-item-visual svg {
+        width: 44px;
+        height: 30px;
+      }
+
+      .help-item-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .help-item-title {
+        font-size: 12px;
+        color: #eef3ff;
+      }
+
+      .help-item-description {
+        font-size: 11px;
+        line-height: 1.55;
+        color: #96a0b3;
       }
 
       .node-search-dialog-header {
@@ -326,7 +568,7 @@
       .node-search-item {
         width: 100%;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 8px;
         padding: 8px 9px;
         border: none;
@@ -339,6 +581,34 @@
 
       .node-search-item:hover {
         background: rgba(255, 255, 255, 0.07);
+      }
+
+      .node-search-item-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .node-search-item-label {
+        color: #eef3ff;
+        font-size: 13px;
+        line-height: 1.2;
+      }
+
+      .node-search-item-description {
+        color: #96a0b3;
+        font-size: 11px;
+        line-height: 1.3;
+      }
+
+      .node-search-match {
+        color: inherit;
+        font-weight: 700;
+        background: rgba(102, 224, 138, 0.28);
+        border-radius: 3px;
+        padding: 0 1px;
+        box-shadow: 0 0 0 1px rgba(102, 224, 138, 0.14);
       }
 
       .node-search-empty {
@@ -396,14 +666,39 @@
       #layer-panel {
         flex: 1 1 auto;
         padding: 10px;
-        border-top: 1px solid #1b1c21;
         display: flex;
         flex-direction: column;
         gap: 8px;
-        min-height: 0;
+        min-height: 120px;
         overflow: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
+      }
+
+      .sidebar-divider {
+        position: relative;
+        flex: 0 0 12px;
+        cursor: ns-resize;
+        touch-action: none;
+      }
+
+      .sidebar-divider::before {
+        content: "";
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        top: 5px;
+        height: 1px;
+        background: #1b1c21;
+      }
+
+      .sidebar-divider::after {
+        content: none;
+      }
+
+      .sidebar-divider:hover::after,
+      .sidebar-divider.is-dragging::after {
+        opacity: 1;
       }
 
       #layer-panel::-webkit-scrollbar {
@@ -533,19 +828,23 @@
       }
 
       .node-list-item {
-        background: linear-gradient(#37373d, #313137);
-        border: 1px solid #17181c;
-        border-radius: 6px;
-        padding: 8px 10px;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        color: #d8dbe2;
+        border-radius: 2px;
+        padding: 4px 6px;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 13px;
+        gap: 6px;
+        margin: 0;
+        font-size: 12px;
       }
 
       .node-list-item:hover {
-        filter: brightness(1.07);
+        background: rgba(255, 255, 255, 0.05);
       }
 
       .mini-dot {
@@ -615,8 +914,16 @@
         background: #f29f78;
       }
 
+      .dot-transparency {
+        background: #9db4ff;
+      }
+
       .dot-textposition {
         background: #ffb36b;
+      }
+
+      .dot-yawpitch {
+        background: #f0a16a;
       }
 
       .dot-textalignment {
@@ -629,6 +936,10 @@
 
       .dot-radius {
         background: #9ae27d;
+      }
+
+      .dot-cursorstyle {
+        background: #bcc4d6;
       }
 
       .dot-animation {
@@ -699,6 +1010,239 @@
 
       .center-view[hidden] {
         display: none;
+      }
+
+      #import-view {
+        padding: 0;
+        background: linear-gradient(#27272c, #242429);
+      }
+
+      .import-panel {
+        height: 100%;
+        border: none;
+        background: linear-gradient(#27272c, #242429);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        box-shadow: none;
+      }
+
+      .import-panel-header {
+        height: 34px;
+        padding: 0 10px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: transparent;
+      }
+
+      .import-panel-title {
+        font-size: 12px;
+        color: #cfd2d9;
+        letter-spacing: 0;
+      }
+
+      .import-panel-meta {
+        font-size: 11px;
+        color: #8f98a8;
+      }
+
+      .import-toolbar {
+        padding: 10px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .import-btn {
+        height: 28px;
+        padding: 0 10px;
+        border: 1px solid #171a20;
+        background: linear-gradient(#383d47, #2c313a);
+        color: #eef3ff;
+        font-size: 11px;
+        cursor: pointer;
+      }
+
+      .import-btn:hover {
+        filter: brightness(1.08);
+      }
+
+      .import-status {
+        margin-left: auto;
+        font-size: 11px;
+        color: #8f98a8;
+      }
+
+      .import-status.error {
+        color: #f19b9b;
+      }
+
+      .import-status.success {
+        color: #8fd38d;
+      }
+
+      .import-editor-wrap {
+        flex: 1;
+        min-height: 0;
+        padding: 16px;
+        background: linear-gradient(#2b2d33, #25272d);
+      }
+
+      .import-editor-shell {
+        position: relative;
+        height: 100%;
+        min-height: 220px;
+        border: none;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+          #14171d;
+        overflow: hidden;
+      }
+
+      .import-editor-shell-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 12px;
+        font-size: 11px;
+        color: #8f98a8;
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        pointer-events: none;
+        z-index: 3;
+      }
+
+      .import-editor-gutter {
+        position: absolute;
+        inset: 28px auto 0 0;
+        width: 56px;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.025);
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .import-editor-gutter-inner {
+        padding: 14px 8px 14px 0;
+        font: 12px/1.6 Consolas, "Courier New", monospace;
+        text-align: right;
+        color: #6f7b90;
+        white-space: pre;
+      }
+
+      .import-editor-line-number {
+        display: block;
+        height: 1.6em;
+      }
+
+      .import-editor-line-number.active {
+        color: #ffffff;
+      }
+
+      .import-editor-active-line {
+        position: absolute;
+        left: 56px;
+        right: 0;
+        height: calc(12px * 1.6);
+        background: rgba(255, 255, 255, 0.045);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .import-editor-highlight,
+      .import-editor {
+        position: absolute;
+        inset: 28px 0 0 0;
+        margin: 0;
+        padding: 14px 14px 14px 70px;
+        font: 12px/1.6 Consolas, "Courier New", monospace;
+        white-space: pre;
+        tab-size: 2;
+        z-index: 2;
+      }
+
+      .import-editor-highlight {
+        color: #dce4f3;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .import-editor-highlight code {
+        display: block;
+        min-height: 100%;
+      }
+
+      .import-token-key {
+        color: #8cc8ff;
+      }
+
+      .import-token-string {
+        color: #a7e67a;
+      }
+
+      .import-token-number {
+        color: #ffbf6b;
+      }
+
+      .import-token-boolean {
+        color: #ff8eb6;
+      }
+
+      .import-token-null {
+        color: #c29bff;
+      }
+
+      .import-token-punctuation {
+        color: #7d8aa0;
+      }
+
+      .import-editor {
+        width: 100%;
+        height: 100%;
+        min-height: 220px;
+        border: none;
+        background: transparent;
+        color: transparent;
+        caret-color: #eef3ff;
+        resize: none;
+        outline: none;
+        scrollbar-width: thin;
+        scrollbar-color: #5f6a7d #171a20;
+      }
+
+      .import-editor::selection {
+        background: rgba(121, 144, 178, 0.32);
+      }
+
+      .import-editor::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+      }
+
+      .import-editor::-webkit-scrollbar-track {
+        background: #171a20;
+        border-radius: 999px;
+      }
+
+      .import-editor::-webkit-scrollbar-thumb {
+        background: linear-gradient(#5f6a7d, #475161);
+        border: 2px solid #171a20;
+        border-radius: 999px;
+      }
+
+      .import-editor::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(#738097, #566173);
       }
 
       #canvas-wrap {
@@ -782,6 +1326,13 @@
         position: relative;
       }
 
+      .preview-frame {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform-origin: center center;
+      }
+
       #preview,
       #preview-large {
         width: 1280px;
@@ -789,12 +1340,9 @@
         border: 1px solid #111;
         background: #2f3239;
         border-radius: 6px;
-        position: absolute;
-        left: 50%;
-        top: 50%;
+        position: relative;
         overflow: hidden;
         box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18);
-        transform-origin: center center;
         background-image: linear-gradient(
             rgba(255, 255, 255, 0.02),
             rgba(255, 255, 255, 0.02)
@@ -823,7 +1371,48 @@
         color: #fff;
         font-weight: 600;
         cursor: pointer;
-        box-shadow: 0 6px 16px rgba(26, 58, 112, 0.2);
+        overflow: hidden;
+      }
+
+      .preview-fill-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        border-radius: inherit;
+        z-index: 0;
+      }
+
+      .preview-shape-fill,
+      .preview-stroke-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        z-index: 0;
+      }
+
+      .preview-fill-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+      }
+
+      .preview-fill-image {
+        width: 100%;
+        height: 100%;
+        display: block;
+        user-select: none;
+        -webkit-user-drag: none;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+      }
+
+      .preview-btn-label {
+        position: relative;
+        z-index: 1;
       }
 
       .preview-text-shell {
@@ -970,6 +1559,39 @@
         height: 24px;
       }
 
+      .cursor-style-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .cursor-style-option {
+        width: 100%;
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 9px;
+        border: 1px solid #15161a;
+        border-radius: 5px;
+        background: linear-gradient(#24242a, #212127);
+        color: var(--text);
+        font-size: 12px;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .cursor-style-option svg {
+        flex: 0 0 auto;
+        opacity: 0.92;
+      }
+
+      .cursor-style-option.active {
+        border-color: rgba(148, 176, 255, 0.72);
+        box-shadow: inset 0 0 0 1px rgba(148, 176, 255, 0.16);
+        background: linear-gradient(#2a2f3a, #232833);
+      }
+
       .node-body {
         padding: 10px;
         display: flex;
@@ -996,6 +1618,73 @@
         outline: none;
         padding: 0 9px;
         font-size: 13px;
+      }
+
+      .num-input {
+        -moz-appearance: textfield;
+      }
+
+      .num-input::-webkit-outer-spin-button,
+      .num-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .num-scrubber-wrap {
+        display: grid;
+        gap: 6px;
+      }
+
+      .num-scrubber {
+        position: relative;
+        height: 16px;
+        border: 1px solid rgba(126, 140, 168, 0.28);
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(42, 47, 58, 0.92), rgba(22, 25, 31, 0.95));
+        cursor: ew-resize;
+        user-select: none;
+        touch-action: none;
+      }
+
+      .num-scrubber:hover {
+        border-color: rgba(126, 179, 255, 0.48);
+        background: linear-gradient(180deg, rgba(50, 58, 72, 0.96), rgba(23, 27, 35, 0.98));
+      }
+
+      .num-scrubber.active {
+        border-color: rgba(126, 179, 255, 0.78);
+        box-shadow: 0 0 0 1px rgba(126, 179, 255, 0.2);
+      }
+
+      .num-scrubber-line {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        top: 50%;
+        height: 2px;
+        border-radius: 999px;
+        background: rgba(212, 225, 255, 0.85);
+        transform: translateY(-50%);
+      }
+
+      .num-scrubber-arrow {
+        position: absolute;
+        top: 50%;
+        width: 8px;
+        height: 8px;
+        border-top: 2px solid rgba(219, 229, 255, 0.92);
+        border-right: 2px solid rgba(219, 229, 255, 0.92);
+        transform-origin: center;
+      }
+
+      .num-scrubber-arrow.left {
+        left: 8px;
+        transform: translateY(-50%) rotate(-135deg);
+      }
+
+      .num-scrubber-arrow.right {
+        right: 8px;
+        transform: translateY(-50%) rotate(45deg);
       }
 
       .text-area-input {
@@ -1274,7 +1963,11 @@
       .port::after {
         content: "";
         position: absolute;
-        inset: 3px;
+        width: 6px;
+        height: 6px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.28);
       }
@@ -1339,8 +2032,16 @@
         background: #f29f78;
       }
 
+      .port.transparency {
+        background: #9db4ff;
+      }
+
       .port.textPosition {
         background: #ffb36b;
+      }
+
+      .port.yawPitch {
+        background: #f0a16a;
       }
 
       .port.textAlignment {
@@ -1357,6 +2058,10 @@
 
       .port.radius {
         background: #9ae27d;
+      }
+
+      .port.cursorStyle {
+        background: #f3f5fb;
       }
 
       .node.button-node .node-header {
@@ -1415,6 +2120,10 @@
         background: linear-gradient(#3f6f86, #335b6f);
       }
 
+      .node.transparency-node .node-header {
+        background: linear-gradient(#5b6993, #4a5678);
+      }
+
       .node.shadow-node .node-header {
         background: linear-gradient(#575f7f, #494f69);
       }
@@ -1431,8 +2140,16 @@
         background: linear-gradient(#8b613b, #735031);
       }
 
+      .node.yawpitch-node .node-header {
+        background: linear-gradient(#8a5a38, #70492e);
+      }
+
       .node.textalignment-node .node-header {
         background: linear-gradient(#7e547f, #664467);
+      }
+
+      .node.cursorstyle-node .node-header {
+        background: linear-gradient(#6f7788, #5c6472);
       }
 
       .node.animation-node .node-header {
@@ -1925,6 +2642,25 @@
           <option>Material</option>
         </select>
       </div>
+
+      <div class="top-group top-group-right">
+        <button class="icon-btn" id="helpToggleBtn" title="Open help" aria-label="Open help">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.9"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div id="main">
@@ -1947,7 +2683,7 @@
           </div>
           <div class="node-list-item" data-node-type="buttonsc">
             <span class="mini-dot dot-buttonsc"></span>
-            <span>Button SC</span>
+            <span>Quick Button</span>
           </div>
           <div class="node-list-item" data-node-type="textlabel">
             <span class="mini-dot dot-textlabel"></span>
@@ -1997,9 +2733,17 @@
             <span class="mini-dot dot-textstyle"></span>
             <span>Text Styles</span>
           </div>
+          <div class="node-list-item" data-node-type="transparency">
+            <span class="mini-dot dot-transparency"></span>
+            <span>Transparency</span>
+          </div>
           <div class="node-list-item" data-node-type="textposition">
             <span class="mini-dot dot-textposition"></span>
             <span>Text Position</span>
+          </div>
+          <div class="node-list-item" data-node-type="yawpitch">
+            <span class="mini-dot dot-yawpitch"></span>
+            <span>Yaw / Pitch</span>
           </div>
           <div class="node-list-item" data-node-type="textalignment">
             <span class="mini-dot dot-textalignment"></span>
@@ -2013,11 +2757,22 @@
             <span class="mini-dot dot-radius"></span>
             <span>Corner Radius</span>
           </div>
+          <div class="node-list-item" data-node-type="cursorstyle">
+            <span class="mini-dot dot-cursorstyle"></span>
+            <span>Cursor Style</span>
+          </div>
           <div class="node-list-item" data-node-type="animation">
             <span class="mini-dot dot-animation"></span>
             <span>Animation</span>
           </div>
         </div>
+        <div
+          id="sidebar-divider"
+          class="sidebar-divider"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Resize node library and layers panels"
+        ></div>
         <div id="layer-panel">
           <div class="layer-panel-header">LAYERS</div>
           <div id="layer-list" class="layer-list">
@@ -2030,6 +2785,7 @@
         <div id="center-tabs">
           <button class="center-tab active" id="editorTabBtn" type="button">Editor</button>
           <button class="center-tab" id="previewTabBtn" type="button">Preview</button>
+          <button class="center-tab" id="importTabBtn" type="button">Import</button>
         </div>
         <div id="center-content">
           <div id="editor-view" class="center-view">
@@ -2049,9 +2805,38 @@
                 </span>
               </div>
               <div id="preview-wrap">
-                <div id="preview-large"></div>
+                <div class="preview-frame" id="preview-frame-large">
+                  <div id="preview-large"></div>
+                </div>
               </div>
             </aside>
+          </div>
+          <div id="import-view" class="center-view" hidden>
+            <div class="import-panel">
+              <div class="import-panel-header">
+                <span class="import-panel-title">NODE IMPORT</span>
+                <span class="import-panel-meta">Paste code, auto-build nodes, and copy shareable graph data</span>
+              </div>
+              <div class="import-toolbar">
+                <button class="import-btn" id="importApplyBtn" type="button">Apply Code</button>
+                <button class="import-btn" id="importCopyCurrentBtn" type="button">Copy Current</button>
+                <button class="import-btn" id="importCopyEditorBtn" type="button">Copy Editor</button>
+                <span class="import-status" id="importStatus">Current graph code is ready to share.</span>
+              </div>
+              <div class="import-editor-wrap">
+                <div class="import-editor-shell">
+                  <div class="import-editor-shell-top">
+                    <span id="importLineCount">Lines: 1</span>
+                  </div>
+                  <div class="import-editor-active-line" id="importEditorActiveLine" aria-hidden="true"></div>
+                  <div class="import-editor-gutter" aria-hidden="true">
+                    <div class="import-editor-gutter-inner" id="importEditorGutter"></div>
+                  </div>
+                  <pre id="importEditorHighlight" class="import-editor-highlight" aria-hidden="true"><code></code></pre>
+                  <textarea id="importEditor" class="import-editor" spellcheck="false"></textarea>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div id="status"></div>
@@ -2073,6 +2858,28 @@
         </div>
         <div id="context-menu" hidden>
           <div class="context-menu-list" id="context-menu-list"></div>
+        </div>
+        <div id="help-modal" hidden>
+          <div class="node-search-backdrop"></div>
+          <div class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="helpDialogTitle">
+            <div class="help-dialog-header">
+              <div class="help-dialog-title" id="helpDialogTitle">Help</div>
+              <button class="sidebar-header-btn" id="helpCloseBtn" type="button" title="Close help" aria-label="Close help">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="help-dialog-scroll-wrap">
+              <div class="help-dialog-body" id="helpContent"></div>
+              <button class="help-back-to-top" id="helpBackToTopBtn" type="button" title="Back to top" aria-label="Back to top">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m18 15-6-6-6 6"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
           <div id="node-search-modal" hidden>
             <div class="node-search-backdrop"></div>
@@ -2139,7 +2946,9 @@
           </div>
         </div>
         <div id="preview-wrap-side">
-          <div id="preview"></div>
+          <div class="preview-frame" id="preview-frame-side">
+            <div id="preview"></div>
+          </div>
         </div>
       </aside>
     </div>
@@ -2151,12 +2960,23 @@
       const connectionsSvg = document.getElementById("connections");
       const preview = document.getElementById("preview");
       const previewLarge = document.getElementById("preview-large");
+      const sidebar = document.getElementById("sidebar");
+      const nodeList = document.getElementById("node-list");
+      const sidebarDivider = document.getElementById("sidebar-divider");
+      const layerPanel = document.getElementById("layer-panel");
+      const previewFrameSide = document.getElementById("preview-frame-side");
+      const previewFrameLarge = document.getElementById("preview-frame-large");
       const previewDeviceSelect = document.getElementById("previewDeviceSelect");
       const statusEl = document.getElementById("status");
       const layerList = document.getElementById("layer-list");
       const contextMenu = document.getElementById("context-menu");
       const contextMenuList = document.getElementById("context-menu-list");
       const nodeSearchToggleBtn = document.getElementById("nodeSearchToggleBtn");
+      const helpToggleBtn = document.getElementById("helpToggleBtn");
+      const helpModal = document.getElementById("help-modal");
+      const helpCloseBtn = document.getElementById("helpCloseBtn");
+      const helpContent = document.getElementById("helpContent");
+      const helpBackToTopBtn = document.getElementById("helpBackToTopBtn");
       const nodeSearchModal = document.getElementById("node-search-modal");
       const nodeSearchCloseBtn = document.getElementById("nodeSearchCloseBtn");
       const nodeSearchInput = document.getElementById("node-search-input");
@@ -2180,8 +3000,19 @@
       const textRichEditorSurface = document.getElementById("text-rich-editor-surface");
       const editorTabBtn = document.getElementById("editorTabBtn");
       const previewTabBtn = document.getElementById("previewTabBtn");
+      const importTabBtn = document.getElementById("importTabBtn");
       const editorView = document.getElementById("editor-view");
       const previewView = document.getElementById("preview-view");
+      const importView = document.getElementById("import-view");
+      const importEditor = document.getElementById("importEditor");
+      const importEditorHighlight = document.querySelector("#importEditorHighlight code");
+      const importEditorGutter = document.getElementById("importEditorGutter");
+      const importEditorActiveLine = document.getElementById("importEditorActiveLine");
+      const importLineCount = document.getElementById("importLineCount");
+      const importApplyBtn = document.getElementById("importApplyBtn");
+      const importCopyCurrentBtn = document.getElementById("importCopyCurrentBtn");
+      const importCopyEditorBtn = document.getElementById("importCopyEditorBtn");
+      const importStatus = document.getElementById("importStatus");
 
       let nodeIdCounter = 1;
       let layerIdCounter = 1;
@@ -2198,6 +3029,11 @@
       let activeTextRichEditorNodeId = null;
       let renderNodeSearchResultsFn = null;
       let previewAnimationFrameId = 0;
+      let sidebarResizeState = null;
+      let helpScrollAnimationFrame = 0;
+      let importSyncTimeout = 0;
+      let importLastSyncedText = "";
+      let importApplyingState = false;
       const imageAssetCache = new Map();
 
       const layers = [];
@@ -2216,6 +3052,16 @@
         return [preview, previewLarge].filter(Boolean);
       }
 
+      function getRenderablePreviewTargets() {
+        if (activeCenterTab === "preview") {
+          return previewLarge ? [previewLarge] : [];
+        }
+        if (previewPanelVisible && preview) {
+          return [preview];
+        }
+        return [];
+      }
+
       function getPreviewViewportSize() {
         const presets = {
           iphone: { width: 390, height: 844, fitScale: 0.82 },
@@ -2229,17 +3075,19 @@
       function syncPreviewViewportFrames() {
         const { width: viewportWidth, height: viewportHeight, fitScale = 1 } = getPreviewViewportSize();
         const pairs = [
-          [preview, previewWrapSide],
-          [previewLarge, previewWrapLarge],
+          [previewFrameSide, preview, previewWrapSide],
+          [previewFrameLarge, previewLarge, previewWrapLarge],
         ];
 
-        pairs.forEach(([target, wrap]) => {
-          if (!target || !wrap) {
+        pairs.forEach(([frame, target, wrap]) => {
+          if (!frame || !target || !wrap) {
             return;
           }
 
           target.style.width = `${viewportWidth}px`;
           target.style.height = `${viewportHeight}px`;
+          frame.style.width = `${viewportWidth}px`;
+          frame.style.height = `${viewportHeight}px`;
 
           const availableWidth = Math.max(1, wrap.clientWidth - 32);
           const availableHeight = Math.max(1, wrap.clientHeight - 32);
@@ -2249,7 +3097,20 @@
               ? 0.93
               : 1;
           const scale = baseScale * fitScale * panelFitScale;
-          target.style.transform = `translate(-50%, -50%) scale(${scale})`;
+          frame.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        });
+      }
+
+      function forceSidePreviewRepaint() {
+        if (!preview || activeCenterTab === "preview" || !previewPanelVisible) {
+          return;
+        }
+        preview.style.willChange = "transform, opacity";
+        preview.style.opacity = "0.9999";
+        preview.offsetHeight;
+        requestAnimationFrame(() => {
+          preview.style.opacity = "1";
+          preview.style.willChange = "";
         });
       }
 
@@ -2277,10 +3138,12 @@
         const entry = {
           status: "loading",
           promise: null,
+          img: null,
         };
 
         entry.promise = new Promise((resolve) => {
           const img = new Image();
+          entry.img = img;
           img.decoding = "async";
           img.onload = () => {
             entry.status = "loaded";
@@ -2300,10 +3163,41 @@
         return entry;
       }
 
+      function setNodePreviewImageUrl(node, nextUrl) {
+        if (!node || node.type !== "image") {
+          return;
+        }
+        const prevUrl = String(node.data?.previewImageUrl || "").trim();
+        const url = String(nextUrl || "").trim();
+        if (prevUrl && prevUrl !== url && prevUrl.startsWith("blob:")) {
+          try {
+            URL.revokeObjectURL(prevUrl);
+          } catch {}
+        }
+        node.data.previewImageUrl = url;
+      }
+
+      function getImageAssetSource(colorData) {
+        return String(colorData?.previewImageUrl || colorData?.imageUrl || "").trim();
+      }
+
+      function rememberNodeImageUrl(node) {
+        if (!node || node.type !== "image") {
+          return;
+        }
+        const nextUrl = getImageAssetSource(node.data);
+        if (node._lastWarmedImageUrl === nextUrl) {
+          return;
+        }
+        node._lastWarmedImageUrl = nextUrl;
+        warmImageAsset(nextUrl);
+      }
+
       const roleNodeCatalog = {
         position: [
           { type: "position", label: "Position" },
           { type: "textposition", label: "Text Position" },
+          { type: "yawpitch", label: "Yaw / Pitch" },
         ],
         scale: [{ type: "scale", label: "Scale" }],
         color: [{ type: "color", label: "Color" }],
@@ -2317,35 +3211,318 @@
         textPosition: [{ type: "textposition", label: "Text Position" }],
         textAlignment: [{ type: "textalignment", label: "Text Alignment" }],
         animation: [{ type: "animation", label: "Animation" }],
+        cursorStyle: [{ type: "cursorstyle", label: "Cursor Style" }],
         textColor: [{ type: "textcolor", label: "Text Color" }],
         textBackground: [{ type: "textbackground", label: "Text Background" }],
         stroke: [{ type: "stroke", label: "Button Stroke" }],
         textStroke: [{ type: "textstroke", label: "Text Stroke" }],
         textStyle: [{ type: "textstyle", label: "Text Styles" }],
+        transparency: [{ type: "transparency", label: "Transparency" }],
         shadow: [{ type: "shadow", label: "Shadow" }],
         radius: [{ type: "radius", label: "Corner Radius" }],
       };
 
-      const fullNodeCatalog = [
-        { type: "button", label: "Button", category: "Roots" },
-        { type: "buttonsc", label: "Button SC", category: "Roots" },
-        { type: "textlabel", label: "Text Label", category: "Roots" },
-        { type: "input", label: "Input", category: "Roots" },
-        { type: "position", label: "Position", category: "Layout" },
-        { type: "textposition", label: "Text Position", category: "Layout" },
-        { type: "textalignment", label: "Text Alignment", category: "Layout" },
-        { type: "scale", label: "Scale", category: "Layout" },
-        { type: "color", label: "Color", category: "Fill" },
-        { type: "image", label: "Image", category: "Fill" },
-        { type: "background", label: "Background", category: "Fill" },
-        { type: "textcolor", label: "Text Color", category: "Text" },
-        { type: "textbackground", label: "Text Background", category: "Text" },
-        { type: "textstroke", label: "Text Stroke", category: "Text" },
-        { type: "textstyle", label: "Text Styles", category: "Text" },
-        { type: "stroke", label: "Button Stroke", category: "Effects" },
-        { type: "shadow", label: "Shadow", category: "Effects" },
-        { type: "radius", label: "Corner Radius", category: "Effects" },
-        { type: "animation", label: "Animation", category: "Motion" },
+      const NODE_DEFS = {
+        button: {
+          label: "Button",
+          description: "Creates a clickable UI element with text and styling options.",
+          helpDescription:
+            "Creates a standard button element that can show text, react to hover and click states, and accept layout, color, text, outline, shadow, radius, and cursor styling nodes.",
+          category: "Roots",
+          kind: "root",
+          acceptedRoles: [
+            "position",
+            "textPosition",
+            "yawPitch",
+            "animation",
+            "scale",
+            "color",
+            "textColor",
+            "textBackground",
+            "stroke",
+            "textStroke",
+            "textStyle",
+            "transparency",
+            "shadow",
+            "radius",
+            "cursorStyle",
+          ],
+        },
+        buttonsc: {
+          label: "Quick Button",
+          description: "Adds a ready-made button with common defaults for faster setup.",
+          helpDescription:
+            "Creates a faster starter button setup with useful defaults already in place, so you can get a working clickable element onto the canvas quickly.",
+          category: "Roots",
+          kind: "compoundRoot",
+          acceptedRoles: [],
+        },
+        textlabel: {
+          label: "Text Label",
+          description: "Displays plain text as a UI element you can style and place.",
+          helpDescription:
+            "Creates a plain text element for labels, titles, or read-only text blocks, with support for placement, size, alignment, text color, text effects, and transparency.",
+          category: "Roots",
+          kind: "root",
+          acceptedRoles: [
+            "position",
+            "scale",
+            "yawPitch",
+            "textColor",
+            "textBackground",
+            "textStroke",
+            "textStyle",
+            "textAlignment",
+            "shadow",
+            "transparency",
+          ],
+        },
+        richtextlabel: {
+          label: "Rich Text Label",
+          description: "Displays formatted text with richer styling inside one text element.",
+          helpDescription:
+            "Creates a text element that can hold richer inline formatting, making it useful for styled words, mixed emphasis, and more advanced text presentation.",
+          category: "Roots",
+          kind: "root",
+          acceptedRoles: [
+            "position",
+            "scale",
+            "yawPitch",
+            "textColor",
+            "textStroke",
+            "textStyle",
+            "textAlignment",
+            "shadow",
+            "transparency",
+          ],
+        },
+        input: {
+          label: "Input",
+          description: "Creates a text field where users can type and edit content.",
+          helpDescription:
+            "Creates an editable text field where users can type, replace, and read text, while still allowing visual styling such as fill, text color, outline, shadow, and rounded corners.",
+          category: "Roots",
+          kind: "root",
+          acceptedRoles: [
+            "position",
+            "scale",
+            "color",
+            "textColor",
+            "textBackground",
+            "stroke",
+            "textStroke",
+            "textStyle",
+            "transparency",
+            "shadow",
+            "radius",
+          ],
+        },
+        position: {
+          label: "Position",
+          description: "Controls where an element sits on the screen.",
+          helpDescription:
+            "Controls the placement of a connected element in the viewport, letting you move the object itself to a different screen position.",
+          category: "Layout",
+          outputRole: "position",
+        },
+        textposition: {
+          label: "Text Position",
+          description: "Moves the text inside an element without moving the element itself.",
+          helpDescription:
+            "Offsets the text content inside a root element, which is useful when the text should sit differently without changing the outer object's position.",
+          category: "Layout",
+          outputRole: "textPosition",
+        },
+        yawpitch: {
+          label: "Yaw / Pitch",
+          description: "Rotates an element to change the direction it faces.",
+          helpDescription:
+            "Rotates a connected element so it tilts or turns in a different direction, changing the visual angle of the object.",
+          category: "Layout",
+          outputRole: "yawPitch",
+        },
+        textalignment: {
+          label: "Text Alignment",
+          description: "Sets how text lines up inside its available space.",
+          helpDescription:
+            "Controls whether text sits left, center, or right inside the available text area, helping shape how the content reads visually.",
+          category: "Layout",
+          outputRole: "textAlignment",
+        },
+        scale: {
+          label: "Scale",
+          description: "Changes the size of an element.",
+          helpDescription:
+            "Changes the overall size of a connected element, making it larger or smaller without replacing the object.",
+          category: "Layout",
+          outputRole: "scale",
+        },
+        color: {
+          label: "Color",
+          description: "Sets the main fill color of an element.",
+          helpDescription:
+            "Defines the primary fill appearance of a connected element, including solid and gradient-style color setups depending on how the node is configured.",
+          category: "Fill",
+          acceptedRoles: ["fillSource"],
+          outputRole: "color",
+        },
+        image: {
+          label: "Image",
+          description: "Uses an image as the visual fill source for an element.",
+          helpDescription:
+            "Uses an image as the visible surface of a connected element, which is useful when the object should display a texture, artwork, or photo instead of a flat color.",
+          category: "Fill",
+          outputRole: "fillSource",
+        },
+        background: {
+          label: "Background",
+          description: "Adds a background layer behind the current content.",
+          helpDescription:
+            "Adds a background layer behind the main content so the object can sit on top of a separate backing surface or visual base.",
+          category: "Fill",
+        },
+        textcolor: {
+          label: "Text Color",
+          description: "Sets the color of the text itself.",
+          helpDescription:
+            "Changes the visible color of text content so labels, button text, and other text elements are easier to style and read.",
+          category: "Text",
+          outputRole: "textColor",
+        },
+        textbackground: {
+          label: "Text Background",
+          description: "Places a colored highlight behind the text.",
+          helpDescription:
+            "Adds a colored block behind text characters, which can be used for emphasis, readability, or highlighted text styling.",
+          category: "Text",
+          outputRole: "textBackground",
+        },
+        textstroke: {
+          label: "Text Stroke",
+          description: "Adds an outline around the text.",
+          helpDescription:
+            "Draws an outline around text characters to improve contrast or create a stronger stylized text look.",
+          category: "Text",
+          acceptedRoles: ["transparency"],
+          outputRole: "textStroke",
+        },
+        textstyle: {
+          label: "Text Styles",
+          description: "Adjusts font styling like size, weight, spacing, and decoration.",
+          helpDescription:
+            "Controls text presentation details such as font family, font size, weight, spacing, and decoration so the text can match the exact style you want.",
+          category: "Text",
+          outputRole: "textStyle",
+        },
+        stroke: {
+          label: "Button Stroke",
+          description: "Adds an outline around the outer shape of an element.",
+          helpDescription:
+            "Adds an outline around the outside of a connected element, helping define its edge or separate it from the background.",
+          category: "Effects",
+          acceptedRoles: ["transparency"],
+          outputRole: "stroke",
+        },
+        transparency: {
+          label: "Transparency",
+          description: "Controls how see-through an element becomes.",
+          helpDescription:
+            "Adjusts how visible or faded a connected element appears, making it possible to create subtle, ghosted, or semi-transparent visuals.",
+          category: "Effects",
+          outputRole: "transparency",
+        },
+        shadow: {
+          label: "Shadow",
+          description: "Adds depth by placing a shadow behind an element or text.",
+          helpDescription:
+            "Adds a shadow behind the connected object or text to create depth, separation, or a softer layered look.",
+          category: "Effects",
+          outputRole: "shadow",
+        },
+        radius: {
+          label: "Corner Radius",
+          description: "Rounds the corners of an element.",
+          helpDescription:
+            "Rounds the corners of a connected rectangular element, allowing the shape to look sharper or softer depending on the radius amount.",
+          category: "Effects",
+          outputRole: "radius",
+        },
+        animation: {
+          label: "Animation",
+          description: "Applies motion behavior to an element over time.",
+          helpDescription:
+            "Applies motion settings to a connected element so it can animate over time instead of staying visually static.",
+          category: "Motion",
+          outputRole: "animation",
+        },
+        cursorstyle: {
+          label: "Cursor Style",
+          description: "Changes how the mouse cursor looks when hovering the element.",
+          helpDescription:
+            "Changes the mouse cursor shown while hovering a connected element, helping communicate whether the object feels clickable or interactive.",
+          category: "Effects",
+          outputRole: "cursorStyle",
+        },
+      };
+
+      const fullNodeCatalog = Object.entries(NODE_DEFS)
+        .filter(([, def]) => def.category)
+        .map(([type, def]) => ({
+          type,
+          label: def.label,
+          description: def.description || "",
+          category: def.category,
+        }));
+
+      const HELP_BUTTONS = [
+        {
+          section: "Top Bar Buttons",
+          key: "reset",
+          label: "Reset Graph",
+          description: "Clears the current canvas and removes every node, connection, and generated layer state from the current working graph. Use this when you want to start over from a clean workspace without manually deleting each part one by one.",
+        },
+        {
+          section: "Top Bar Buttons",
+          key: "center",
+          label: "Center Graph",
+          description: "Moves the editor view back to the centered position, which helps when you have panned far away from the graph and want to quickly bring the workspace back into view.",
+        },
+        {
+          section: "Top Bar Buttons",
+          key: "preview",
+          label: "Hide Preview",
+          description: "Shows or hides the side live preview panel. This is useful when you want more room for editing nodes and connections, or when you want to focus on the live result instead of the graph.",
+        },
+        {
+          section: "Top Bar Buttons",
+          key: "zoom",
+          label: "Reset Zoom",
+          description: "Returns the editor zoom level to its default amount so the node graph is easier to read again after zooming in or out.",
+        },
+        {
+          section: "Top Bar Buttons",
+          key: "help",
+          label: "Help",
+          description: "Opens this help window. It collects longer explanations for the main controls and the node library so you can understand what each part is meant to change before wiring things together.",
+        },
+        {
+          section: "Sidebar Buttons",
+          key: "search",
+          label: "Search Nodes",
+          description: "Opens the full node search window so you can find nodes by title or by description. Matching text is highlighted there to make it easier to understand why a result appeared.",
+        },
+        {
+          section: "Editor Tabs",
+          key: "editor",
+          label: "Editor Tab",
+          description: "Switches to the graph editor view, where you create nodes, arrange them on the canvas, and connect them together to define behavior and appearance.",
+        },
+        {
+          section: "Editor Tabs",
+          key: "previewTab",
+          label: "Preview Tab",
+          description: "Switches to the larger preview view so you can inspect the current visual output more clearly without the graph taking up the center area.",
+        },
       ];
 
       let availableFonts = [
@@ -2455,6 +3632,7 @@
             text: "Text",
             position: "Position",
             textPosition: "Text Position",
+            yawPitch: "Yaw / Pitch",
             textAlignment: "Text Alignment",
             animation: "Animation",
             scale: "Scale",
@@ -2465,50 +3643,53 @@
             stroke: "Button Stroke",
             textStroke: "Text Stroke",
             textStyle: "Text Styles",
+            transparency: "Transparency",
             shadow: "Shadow",
             radius: "Corner Radius",
+            cursorStyle: "Cursor Style",
           }[role] || role
         );
       }
 
-      function roleForNodeType(type) {
-        if (type === "position") return "position";
-        if (type === "textposition") return "textPosition";
-        if (type === "textalignment") return "textAlignment";
-        if (type === "animation") return "animation";
-        if (type === "scale") return "scale";
-        if (type === "color") return "color";
-        if (type === "image") return "fillSource";
-        if (type === "textcolor") return "textColor";
-        if (type === "textbackground") return "textBackground";
-        if (type === "stroke") return "stroke";
-        if (type === "textstroke") return "textStroke";
-        if (type === "textstyle") return "textStyle";
-        if (type === "shadow") return "shadow";
-        if (type === "radius") return "radius";
-        return null;
+      function getNodeDef(type) {
+        return NODE_DEFS[type] || null;
       }
 
-      function assignConnectionRole(targetNode, role, fromNodeId) {
-        if (!targetNode?.data) {
-          return;
+      function getNodeLabel(type) {
+        return getNodeDef(type)?.label || (
+          type.charAt(0).toUpperCase() + type.slice(1)
+        );
+      }
+
+      function roleForNodeType(type) {
+        return getNodeDef(type)?.outputRole || null;
+      }
+
+      function nodeAcceptsRole(type, role) {
+        const acceptedRoles = getNodeDef(type)?.acceptedRoles || [];
+        return acceptedRoles.includes(role);
+      }
+
+      function isRenderableRootType(type) {
+        const kind = getNodeDef(type)?.kind || null;
+        return kind === "root" || kind === "compoundRoot";
+      }
+
+      function isCompoundRootType(type) {
+        return getNodeDef(type)?.kind === "compoundRoot";
+      }
+
+      function canConnectNodes(fromNode, toNode, role) {
+        if (!fromNode || !toNode || !role) {
+          return false;
         }
-        if (role === "position") targetNode.data.positionNodeId = fromNodeId;
-        if (role === "textPosition") targetNode.data.textPositionNodeId = fromNodeId;
-        if (role === "textAlignment") targetNode.data.textAlignmentNodeId = fromNodeId;
-        if (role === "animation") targetNode.data.animationNodeId = fromNodeId;
-        if (role === "scale") targetNode.data.scaleNodeId = fromNodeId;
-        if (role === "color") targetNode.data.colorNodeId = fromNodeId;
-        if (role === "textColor") targetNode.data.textColorNodeId = fromNodeId;
-        if (role === "textBackground") targetNode.data.textBackgroundNodeId = fromNodeId;
-        if (role === "stroke") targetNode.data.strokeNodeId = fromNodeId;
-        if (role === "textStroke") targetNode.data.textStrokeNodeId = fromNodeId;
-        if (role === "textStyle") targetNode.data.textStyleNodeId = fromNodeId;
-        if (role === "shadow") targetNode.data.shadowNodeId = fromNodeId;
-        if (role === "radius") targetNode.data.radiusNodeId = fromNodeId;
-        if (role === "fillSource" && targetNode.type === "color") {
-          targetNode.data.imageNodeId = fromNodeId;
+        if (fromNode.id === toNode.id) {
+          return false;
         }
+        if (roleForNodeType(fromNode.type) !== role) {
+          return false;
+        }
+        return nodeAcceptsRole(toNode.type, role);
       }
 
       function isTextRole(role) {
@@ -2516,7 +3697,37 @@
       }
 
       function isPositionRole(role) {
-        return role === "position" || role === "textPosition";
+        return role === "position" || role === "textPosition" || role === "yawPitch";
+      }
+
+      function getCursorStyleOptions() {
+        return [
+          {
+            value: "default",
+            label: "Default",
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l8.5 8.5-4 1.2 1.8 4.8-2.4.9-1.8-4.8-3.4 2.5z"/></svg>',
+          },
+          {
+            value: "pointer",
+            label: "Pointer",
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v8"/><path d="M12 7v8"/><path d="M15 9v6"/><path d="M18 11v4"/><path d="M7 12.5V11a2 2 0 0 1 4 0"/><path d="M7 12.5 6 12a2 2 0 0 0-2.7 2.7l3 6A3 3 0 0 0 9 22h5.2a3 3 0 0 0 2.8-1.9l1.5-4A5 5 0 0 0 18 11"/></svg>',
+          },
+          {
+            value: "text",
+            label: "Text",
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8"/><path d="M8 20h8"/><path d="M12 4v16"/></svg>',
+          },
+          {
+            value: "move",
+            label: "Move",
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20"/><path d="M2 12h20"/><path d="m8 6 4-4 4 4"/><path d="m8 18 4 4 4-4"/><path d="m6 8-4 4 4 4"/><path d="m18 8 4 4-4 4"/></svg>',
+          },
+          {
+            value: "not-allowed",
+            label: "Not Allowed",
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M7 17 17 7"/></svg>',
+          },
+        ];
       }
 
       function closeConnectSpawnMenu() {
@@ -2525,6 +3736,124 @@
         connectSpawnSearch.value = "";
         connectSpawnResults.innerHTML = "";
         connectSpawnEmpty.hidden = true;
+      }
+
+      function clampNumber(value, min, max) {
+        let next = value;
+        if (Number.isFinite(min)) {
+          next = Math.max(min, next);
+        }
+        if (Number.isFinite(max)) {
+          next = Math.min(max, next);
+        }
+        return next;
+      }
+
+      function getNumberStep(inputEl) {
+        const rawStep = inputEl.getAttribute("step");
+        if (!rawStep || rawStep === "any") {
+          return 1;
+        }
+        const step = Number(rawStep);
+        return Number.isFinite(step) && step > 0 ? step : 1;
+      }
+
+      function getStepPrecision(step) {
+        const stepText = String(step);
+        const decimalMatch = stepText.match(/\.(\d+)/);
+        if (!decimalMatch) {
+          return 0;
+        }
+        return decimalMatch[1].length;
+      }
+
+      function getOptionalNumberAttr(inputEl, attrName) {
+        const rawValue = inputEl.getAttribute(attrName);
+        if (rawValue == null || rawValue === "") {
+          return null;
+        }
+        const parsedValue = Number(rawValue);
+        return Number.isFinite(parsedValue) ? parsedValue : null;
+      }
+
+      function updateNumberInputValue(inputEl, nextValue) {
+        const min = getOptionalNumberAttr(inputEl, "min");
+        const max = getOptionalNumberAttr(inputEl, "max");
+        const step = getNumberStep(inputEl);
+        const precision = getStepPrecision(step);
+        const clampedValue = clampNumber(
+          nextValue,
+          min,
+          max
+        );
+        const roundedValue =
+          precision > 0
+            ? Number(clampedValue.toFixed(precision))
+            : Math.round(clampedValue);
+        inputEl.value = precision > 0 ? roundedValue.toFixed(precision) : String(roundedValue);
+        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      function attachNumberScrubber(inputEl) {
+        if (!inputEl || inputEl.dataset.scrubberReady === "true") {
+          return;
+        }
+        inputEl.dataset.scrubberReady = "true";
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "num-scrubber-wrap";
+        inputEl.parentNode.insertBefore(wrapper, inputEl);
+        wrapper.appendChild(inputEl);
+
+        const scrubber = document.createElement("div");
+        scrubber.className = "num-scrubber";
+        scrubber.title = "Drag left or right to change value";
+        scrubber.innerHTML = `
+          <div class="num-scrubber-line"></div>
+          <div class="num-scrubber-arrow left"></div>
+          <div class="num-scrubber-arrow right"></div>
+        `;
+        wrapper.appendChild(scrubber);
+
+        scrubber.addEventListener("dblclick", () => {
+          inputEl.focus();
+          inputEl.select();
+        });
+
+        scrubber.addEventListener("mousedown", (startEvent) => {
+          startEvent.preventDefault();
+          startEvent.stopPropagation();
+
+          const startValue = Number(inputEl.value || 0);
+          const safeStartValue = Number.isFinite(startValue) ? startValue : 0;
+          const step = getNumberStep(inputEl);
+          const pixelsPerStep = startEvent.shiftKey ? 10 : 2;
+          scrubber.classList.add("active");
+          document.body.classList.add("num-scrubbing");
+
+          function onMove(moveEvent) {
+            moveEvent.preventDefault();
+            const deltaX = moveEvent.clientX - startEvent.clientX;
+            const deltaValue = (deltaX / pixelsPerStep) * step;
+            updateNumberInputValue(inputEl, safeStartValue + deltaValue);
+          }
+
+          function onUp() {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+            scrubber.classList.remove("active");
+            document.body.classList.remove("num-scrubbing");
+          }
+
+          window.addEventListener("mousemove", onMove);
+          window.addEventListener("mouseup", onUp);
+        });
+      }
+
+      function setupNumberScrubbers(nodeEl) {
+        for (const inputEl of nodeEl.querySelectorAll("input.num-input[type=\"number\"]")) {
+          attachNumberScrubber(inputEl);
+        }
       }
 
       function renderConnectSpawnMenu() {
@@ -2642,22 +3971,14 @@
       function spawnNodeFromConnectMenu(type, buttonNode, worldPoint) {
         const spawnX = clamp(worldPoint.x, 16, 2800);
         const spawnY = clamp(worldPoint.y, 16, 1860);
-        const rootTypeLabel = {
-          button: "Button",
-          buttonsc: "Button SC",
-          textlabel: "Text Label",
-          richtextlabel: "Rich Text Label",
-          input: "Input",
-        }[type];
+        const spawnData =
+          type === "transparency"
+            ? { target: buttonNode?.type === "textlabel" || buttonNode?.type === "richtextlabel" ? "text" : "button" }
+            : {};
+        const rootTypeLabel = getNodeLabel(type);
 
         if (isButtonRootType(type)) {
-          const layer = createLayer(rootTypeLabel);
-          activeLayerId = layer.id;
-          activeInteractionKind = null;
-          updateLayerControls();
-          const createdNode = makeNode(type, spawnX, spawnY, {}, layer.id, null);
-          updateLayerControls();
-          return createdNode;
+          return spawnRootLayerNode(type, spawnX, spawnY, {}, rootTypeLabel).node;
         }
 
         if (type === "background") {
@@ -2671,7 +3992,7 @@
           type,
           spawnX,
           spawnY,
-          {},
+          spawnData,
           buttonNode.layerId,
           buttonNode.interactionKind || null
         );
@@ -2708,7 +4029,7 @@
         closeConnectSpawnMenu();
       }
 
-      function makeNode(type, x, y, data = {}, layerId = null, interactionKind = null) {
+      function makeNode(type, x, y, data = {}, layerId = null, interactionKind = null, skipImmediateRender = false) {
         const id = "node_" + nodeIdCounter++;
         const node = {
           id,
@@ -2734,7 +4055,7 @@
           }
         }
         graph.nodes.push(node);
-        if (isNodeVisible(node)) {
+        if (!skipImmediateRender && isNodeVisible(node)) {
           renderNode(node);
         }
         updatePreview();
@@ -2748,6 +4069,15 @@
         };
         layers.push(layer);
         return layer;
+      }
+
+      function spawnRootLayerNode(type, x, y, data = {}, layerName = null) {
+        const layer = createLayer(layerName);
+        const node = makeNode(type, x, y, data, layer.id, null, true);
+        setActiveLayer(layer.id, null);
+        updateLayerControls();
+        rerenderCanvas();
+        return { layer, node };
       }
 
       function isNodeVisible(node) {
@@ -2765,7 +4095,7 @@
       }
 
       function isButtonRootType(type) {
-        return type === "button" || type === "buttonsc" || type === "textlabel" || type === "richtextlabel" || type === "input";
+        return isRenderableRootType(type);
       }
 
       function getLayerLabel(layer) {
@@ -2854,16 +4184,28 @@
 
       function syncCenterTabState() {
         const showingPreview = activeCenterTab === "preview";
-        editorView.hidden = showingPreview;
+        const showingImport = activeCenterTab === "import";
+        editorView.hidden = showingPreview || showingImport;
         previewView.hidden = !showingPreview;
-        editorTabBtn.classList.toggle("active", !showingPreview);
+        importView.hidden = !showingImport;
+        editorTabBtn.classList.toggle("active", activeCenterTab === "editor");
         previewTabBtn.classList.toggle("active", showingPreview);
-        mainEl.classList.toggle("preview-side-hidden", showingPreview || !previewPanelVisible);
-        requestAnimationFrame(syncPreviewViewportFrames);
+        importTabBtn.classList.toggle("active", showingImport);
+        mainEl.classList.toggle(
+          "preview-side-hidden",
+          showingPreview || showingImport || !previewPanelVisible
+        );
+        requestAnimationFrame(() => {
+          syncPreviewViewportFrames();
+          updatePreview();
+        });
       }
 
       function syncRightPreviewVisibility() {
-        mainEl.classList.toggle("preview-side-hidden", activeCenterTab === "preview" || !previewPanelVisible);
+        mainEl.classList.toggle(
+          "preview-side-hidden",
+          activeCenterTab === "preview" || activeCenterTab === "import" || !previewPanelVisible
+        );
         togglePreviewBtn.title = previewPanelVisible ? "Hide live preview" : "Show live preview";
         togglePreviewBtn.setAttribute(
           "aria-label",
@@ -2920,10 +4262,13 @@
           textbackground: { width: 260, height: 380 },
           stroke: { width: 260, height: 380 },
           textstroke: { width: 260, height: 300 },
+          transparency: { width: 260, height: 190 },
           textstyle: { width: 280, height: 300 },
           textposition: { width: 260, height: 250 },
+          yawpitch: { width: 260, height: 190 },
           shadow: { width: 260, height: 260 },
           radius: { width: 260, height: 260 },
+          cursorstyle: { width: 260, height: 260 },
           animation: { width: 300, height: 420 },
         }[type] || { width: 260, height: 240 };
       }
@@ -3111,41 +4456,384 @@
         return JSON.parse(JSON.stringify(data));
       }
 
-      function sanitizeButtonData(data) {
+      function serializeGraphState() {
         return {
-          ...data,
-          positionNodeId: null,
-          textPositionNodeId: null,
-          textAlignmentNodeId: null,
-          animationNodeId: null,
-          scaleNodeId: null,
-          colorNodeId: null,
-          textColorNodeId: null,
-          textBackgroundNodeId: null,
-          strokeNodeId: null,
-          textStrokeNodeId: null,
-          textStyleNodeId: null,
-          shadowNodeId: null,
-          radiusNodeId: null,
+          app: "NodeForge",
+          version: 1,
+          view: {
+            activeLayerId,
+            activeInteractionKind,
+          },
+          layers: layers.map((layer) => ({
+            id: layer.id,
+            name: layer.name,
+          })),
+          nodes: graph.nodes.map((node) => ({
+            id: node.id,
+            type: node.type,
+            x: node.x,
+            y: node.y,
+            layerId: node.layerId ?? null,
+            interactionKind: node.interactionKind ?? null,
+            data: cloneData(node.data),
+          })),
+          connections: graph.connections.map((connection) => ({
+            fromNodeId: connection.fromNodeId,
+            toNodeId: connection.toNodeId,
+            role: connection.role,
+          })),
         };
       }
 
+      function formatGraphStateForImport(state = serializeGraphState()) {
+        return JSON.stringify(state, null, 2);
+      }
+
+      function setImportStatus(message, tone = "") {
+        if (!importStatus) {
+          return;
+        }
+        importStatus.textContent = message;
+        importStatus.className = `import-status${tone ? ` ${tone}` : ""}`;
+      }
+
+      function renderImportEditorHighlight() {
+        if (!importEditor || !importEditorHighlight) {
+          return;
+        }
+        const source = importEditor.value || "";
+        const tokenPattern =
+          /"(?:\\.|[^"\\])*"(?=\s*:)|"(?:\\.|[^"\\])*"|true|false|null|-?\d+(?:\.\d+)?|[{}\[\],:]/g;
+        let cursor = 0;
+        let html = "";
+
+        source.replace(tokenPattern, (token, offset) => {
+          html += escapeHtml(source.slice(cursor, offset));
+          let className = "import-token-punctuation";
+          if (token.startsWith('"')) {
+            className = /^\s*:/.test(source.slice(offset + token.length)) ? "import-token-key" : "import-token-string";
+          } else if (token === "true" || token === "false") {
+            className = "import-token-boolean";
+          } else if (token === "null") {
+            className = "import-token-null";
+          } else if (/^-?\d/.test(token)) {
+            className = "import-token-number";
+          }
+          html += `<span class="${className}">${escapeHtml(token)}</span>`;
+          cursor = offset + token.length;
+          return token;
+        });
+
+        html += escapeHtml(source.slice(cursor));
+        importEditorHighlight.innerHTML = html || " ";
+      }
+
+      function getImportEditorActiveLineIndex() {
+        if (!importEditor) {
+          return 0;
+        }
+        return importEditor.value.slice(0, importEditor.selectionStart).split("\n").length - 1;
+      }
+
+      function updateImportLineCount() {
+        if (!importEditor || !importLineCount) {
+          return;
+        }
+        const lineCount = Math.max(1, importEditor.value.split("\n").length);
+        importLineCount.textContent = `Lines: ${lineCount}`;
+      }
+
+      function renderImportEditorGutter() {
+        if (!importEditor || !importEditorGutter) {
+          return;
+        }
+        const lines = Math.max(1, importEditor.value.split("\n").length);
+        const activeLineIndex = getImportEditorActiveLineIndex();
+        importEditorGutter.innerHTML = Array.from({ length: lines }, (_, index) => {
+          const activeClass = index === activeLineIndex ? " active" : "";
+          return `<span class="import-editor-line-number${activeClass}">${index + 1}</span>`;
+        }).join("");
+      }
+
+      function updateImportEditorActiveLine() {
+        if (!importEditor || !importEditorActiveLine) {
+          return;
+        }
+        const lineHeight = 12 * 1.6;
+        const activeLineIndex = getImportEditorActiveLineIndex();
+        importEditorActiveLine.style.transform = `translateY(${28 + 14 + activeLineIndex * lineHeight - importEditor.scrollTop}px)`;
+      }
+
+      function syncImportEditorScroll() {
+        const highlightPre = importEditorHighlight?.parentElement;
+        if (!importEditor || !highlightPre) {
+          return;
+        }
+        if (importEditorGutter) {
+          importEditorGutter.style.transform = `translateY(${-importEditor.scrollTop}px)`;
+        }
+        highlightPre.scrollTop = importEditor.scrollTop;
+        highlightPre.scrollLeft = importEditor.scrollLeft;
+        updateImportEditorActiveLine();
+      }
+
+      function syncImportEditorFromGraph(force = false) {
+        if (!importEditor || importApplyingState) {
+          return;
+        }
+        if (!force && document.activeElement === importEditor) {
+          return;
+        }
+        const nextText = formatGraphStateForImport();
+        importEditor.value = nextText;
+        importLastSyncedText = nextText;
+        renderImportEditorHighlight();
+        renderImportEditorGutter();
+        updateImportLineCount();
+        syncImportEditorScroll();
+        updateImportEditorActiveLine();
+      }
+
+      function getNextCounterFromIds(items, prefix, fallback = 1) {
+        let maxId = fallback - 1;
+        for (const item of items) {
+          const id = String(item?.id || "");
+          if (!id.startsWith(prefix)) {
+            continue;
+          }
+          const numericPart = Number(id.slice(prefix.length));
+          if (Number.isFinite(numericPart)) {
+            maxId = Math.max(maxId, numericPart);
+          }
+        }
+        return maxId + 1;
+      }
+
+      function shouldAutoLayoutImportedNodes(nodes) {
+        if (!Array.isArray(nodes) || nodes.length < 4) {
+          return false;
+        }
+        const xs = [...new Set(nodes.map((node) => Math.round(Number(node.x) || 0)))];
+        const ys = [...new Set(nodes.map((node) => Math.round(Number(node.y) || 0)))];
+        const xSpread = Math.max(...nodes.map((node) => Number(node.x) || 0)) - Math.min(...nodes.map((node) => Number(node.x) || 0));
+        const ySpread = Math.max(...nodes.map((node) => Number(node.y) || 0)) - Math.min(...nodes.map((node) => Number(node.y) || 0));
+        return xs.length <= 2 || ys.length <= 2 || xSpread < 260 || ySpread < 220;
+      }
+
+      function autoLayoutImportedNodes(nodes) {
+        if (!Array.isArray(nodes) || !nodes.length) {
+          return;
+        }
+
+        const rootNodes = nodes.filter((node) => isButtonRootType(node.type) || node.type === "background");
+        const otherNodes = nodes.filter((node) => !rootNodes.includes(node));
+        const rootByLayer = new Map();
+
+        rootNodes.forEach((node, index) => {
+          if (node.type === "background") {
+            node.x = 60;
+            node.y = 60;
+            return;
+          }
+          const column = index % 3;
+          const row = Math.floor(index / 3);
+          node.x = 180 + column * 460 + (row % 2) * 30;
+          node.y = 120 + row * 430;
+          rootByLayer.set(node.layerId || `root_${index}`, node);
+        });
+
+        const groupByLayer = new Map();
+        for (const node of otherNodes) {
+          const key = `${node.layerId || "none"}:${node.interactionKind || "base"}`;
+          if (!groupByLayer.has(key)) {
+            groupByLayer.set(key, []);
+          }
+          groupByLayer.get(key).push(node);
+        }
+
+        for (const [groupKey, groupNodes] of groupByLayer.entries()) {
+          const [layerId, interactionKind] = groupKey.split(":");
+          const rootNode = rootByLayer.get(layerId) || null;
+          const baseX = rootNode ? rootNode.x : 180;
+          const baseY = rootNode ? rootNode.y : 120;
+          const interactionOffsetY = interactionKind === "hover" ? -120 : interactionKind === "click" ? 120 : 0;
+          groupNodes
+            .sort((a, b) => a.type.localeCompare(b.type))
+            .forEach((node, index) => {
+              const side = index % 2 === 0 ? -1 : 1;
+              const ring = Math.floor(index / 2);
+              node.x = baseX + side * (260 + ring * 44);
+              node.y = baseY + interactionOffsetY + ring * 86 + (index % 2 === 0 ? -18 : 18);
+            });
+        }
+      }
+
+      function applyImportedGraphState(rawState, showSuccessMessage = true) {
+        if (!rawState || typeof rawState !== "object" || Array.isArray(rawState)) {
+          throw new Error("The code must be a JSON object.");
+        }
+
+        const importedLayers = Array.isArray(rawState.layers) ? rawState.layers : [];
+        const importedNodes = Array.isArray(rawState.nodes) ? rawState.nodes : [];
+        const importedConnections = Array.isArray(rawState.connections) ? rawState.connections : [];
+        const importedView = rawState.view && typeof rawState.view === "object" ? rawState.view : {};
+
+        const nextLayers = importedLayers
+          .filter((layer) => layer && typeof layer.id === "string")
+          .map((layer) => ({
+            id: layer.id,
+            name: String(layer.name || layer.id),
+          }));
+
+        const nextNodes = importedNodes
+          .filter((node) => node && typeof node.type === "string" && getNodeDef(node.type))
+          .map((node, index) => ({
+            id: typeof node.id === "string" && node.id ? node.id : `node_${index + 1}`,
+            type: node.type,
+            x: Number.isFinite(Number(node.x)) ? Number(node.x) : 120,
+            y: Number.isFinite(Number(node.y)) ? Number(node.y) : 90,
+            layerId: node.layerId == null ? null : String(node.layerId),
+            interactionKind:
+              node.interactionKind === "hover" || node.interactionKind === "click"
+                ? node.interactionKind
+                : null,
+            data: Object.assign(defaultDataFor(node.type), cloneData(node.data || {})),
+          }));
+
+        const nodeIds = new Set(nextNodes.map((node) => node.id));
+        const nextConnections = importedConnections
+          .filter(
+            (connection) =>
+              connection &&
+              typeof connection.fromNodeId === "string" &&
+              typeof connection.toNodeId === "string" &&
+              typeof connection.role === "string" &&
+              nodeIds.has(connection.fromNodeId) &&
+              nodeIds.has(connection.toNodeId)
+          )
+          .map((connection) => ({
+            fromNodeId: connection.fromNodeId,
+            toNodeId: connection.toNodeId,
+            role: connection.role,
+          }));
+
+        if (shouldAutoLayoutImportedNodes(nextNodes)) {
+          autoLayoutImportedNodes(nextNodes);
+        }
+
+        closeConnectSpawnMenu();
+        if (helpScrollAnimationFrame) {
+          cancelAnimationFrame(helpScrollAnimationFrame);
+          helpScrollAnimationFrame = 0;
+        }
+
+        graph.nodes.length = 0;
+        graph.connections.length = 0;
+        layers.length = 0;
+        collapsedLayerIds.clear();
+        canvas.querySelectorAll(".node").forEach((nodeEl) => nodeEl.remove());
+        connectionsSvg.innerHTML = "";
+
+        nextLayers.forEach((layer) => layers.push(layer));
+        nextNodes.forEach((node) => graph.nodes.push(node));
+        nextConnections.forEach((connection) => graph.connections.push(connection));
+
+        nodeIdCounter = getNextCounterFromIds(graph.nodes, "node_");
+        layerIdCounter = getNextCounterFromIds(layers, "layer_");
+        copiedNodePayload = null;
+        activeWire = null;
+
+        const requestedLayerId = importedView.activeLayerId == null ? null : String(importedView.activeLayerId);
+        const fallbackLayerId =
+          requestedLayerId && (requestedLayerId === "background" || layers.some((layer) => layer.id === requestedLayerId))
+            ? requestedLayerId
+            : graph.nodes.some((node) => node.type === "background")
+              ? "background"
+              : layers[0]?.id || null;
+        activeLayerId = fallbackLayerId;
+        activeInteractionKind =
+          importedView.activeInteractionKind === "hover" || importedView.activeInteractionKind === "click"
+            ? importedView.activeInteractionKind
+            : null;
+        if (!activeLayerId || activeLayerId === "background") {
+          activeInteractionKind = null;
+        }
+
+        updateLayerControls();
+        rerenderCanvas();
+        updatePreview();
+        syncImportEditorFromGraph(true);
+        if (showSuccessMessage) {
+          showStatus("Graph imported");
+          setImportStatus("Code applied to the graph.", "success");
+        }
+      }
+
+      function applyImportEditorValue() {
+        if (!importEditor) {
+          return;
+        }
+        const source = importEditor.value.trim();
+        if (!source) {
+          setImportStatus("Paste graph JSON here to build nodes.", "");
+          return;
+        }
+
+        try {
+          importApplyingState = true;
+          const parsed = JSON.parse(source);
+          applyImportedGraphState(parsed, false);
+          importLastSyncedText = importEditor.value;
+          setImportStatus("Code applied to the graph.", "success");
+          showStatus("Graph imported");
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Invalid graph code.";
+          setImportStatus(message, "error");
+        } finally {
+          importApplyingState = false;
+        }
+      }
+
+      async function copyTextToClipboard(text) {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        temp.style.position = "fixed";
+        temp.style.opacity = "0";
+        document.body.appendChild(temp);
+        temp.select();
+        const copied = document.execCommand("copy");
+        temp.remove();
+        return copied;
+      }
+
+      function sanitizeButtonData(data) {
+        const nextData = { ...data };
+        delete nextData.positionNodeId;
+        delete nextData.textPositionNodeId;
+        delete nextData.textAlignmentNodeId;
+        delete nextData.animationNodeId;
+        delete nextData.scaleNodeId;
+        delete nextData.colorNodeId;
+        delete nextData.textColorNodeId;
+        delete nextData.textBackgroundNodeId;
+        delete nextData.strokeNodeId;
+        delete nextData.textStrokeNodeId;
+        delete nextData.textStyleNodeId;
+        delete nextData.transparencyNodeId;
+        delete nextData.shadowNodeId;
+        delete nextData.radiusNodeId;
+        return nextData;
+      }
+
       function sanitizePreviewRootData(data) {
-        return {
-          ...data,
-          positionNodeId: null,
-          textPositionNodeId: null,
-          textAlignmentNodeId: null,
-          scaleNodeId: null,
-          colorNodeId: null,
-          textColorNodeId: null,
-          textBackgroundNodeId: null,
-          strokeNodeId: null,
-          textStrokeNodeId: null,
-          textStyleNodeId: null,
-          shadowNodeId: null,
-          radiusNodeId: null,
-        };
+        const nextData = sanitizeButtonData(data);
+        delete nextData.transparencyNodeId;
+        return nextData;
       }
 
       function copyNode(nodeId) {
@@ -3170,13 +4858,7 @@
 
         const type = copiedNodePayload.type;
         const spawnPos = nextSpawnPosition(type);
-        const rootTypeLabel = {
-          button: "Button",
-          buttonsc: "Button SC",
-          textlabel: "Text Label",
-          richtextlabel: "Rich Text Label",
-          input: "Input",
-        }[type];
+        const rootTypeLabel = getNodeLabel(type);
 
         if (isButtonRootType(type)) {
           const rootName =
@@ -3187,21 +4869,15 @@
                   "Input"
                 )
               : (copiedNodePayload.data.text || rootTypeLabel || "Node");
-          const layer = createLayer(`${String(rootName).trim() || rootTypeLabel || "Node"} Copy`);
-          activeLayerId = layer.id;
-          activeInteractionKind = null;
-          updateLayerControls();
-          makeNode(
+          const { layer } = spawnRootLayerNode(
             type,
             spawnPos.x,
             spawnPos.y,
             isButtonRootType(type)
               ? sanitizePreviewRootData(cloneData(copiedNodePayload.data))
               : cloneData(copiedNodePayload.data),
-            layer.id,
-            null
+            `${String(rootName).trim() || rootTypeLabel || "Node"} Copy`
           );
-          rerenderCanvas();
           showStatus(`${rootTypeLabel || "Node"} pasted into new layer`);
           return;
         }
@@ -3315,10 +4991,6 @@
             toNodeId: newToId,
             role: conn.role,
           });
-          const toNode = graph.nodes.find((n) => n.id === newToId);
-          if (toNode) {
-            assignConnectionRole(toNode, conn.role, newFromId);
-          }
         }
 
         activeLayerId = newLayer.id;
@@ -3340,17 +5012,6 @@
         if (type === "button") {
           return {
             text: "Button",
-            positionNodeId: null,
-            textPositionNodeId: null,
-            animationNodeId: null,
-            scaleNodeId: null,
-            colorNodeId: null,
-            textColorNodeId: null,
-            strokeNodeId: null,
-            textStrokeNodeId: null,
-            textStyleNodeId: null,
-            shadowNodeId: null,
-            radiusNodeId: null,
           };
         }
 
@@ -3403,27 +5064,12 @@
           return {
             text: "Text Label",
             richHtml: "",
-            positionNodeId: null,
-            textAlignmentNodeId: null,
-            scaleNodeId: null,
-            textColorNodeId: null,
-            textBackgroundNodeId: null,
-            textStrokeNodeId: null,
-            textStyleNodeId: null,
-            shadowNodeId: null,
           };
         }
 
         if (type === "richtextlabel") {
           return {
             html: '<span style="color:#ffffff;">Rich</span> <span style="color:#8fd36b;">Text</span>',
-            positionNodeId: null,
-            textAlignmentNodeId: null,
-            scaleNodeId: null,
-            textColorNodeId: null,
-            textStrokeNodeId: null,
-            textStyleNodeId: null,
-            shadowNodeId: null,
           };
         }
 
@@ -3431,16 +5077,6 @@
           return {
             placeholder: "Type here...",
             value: "",
-            positionNodeId: null,
-            scaleNodeId: null,
-            colorNodeId: null,
-            textColorNodeId: null,
-            textBackgroundNodeId: null,
-            strokeNodeId: null,
-            textStrokeNodeId: null,
-            textStyleNodeId: null,
-            shadowNodeId: null,
-            radiusNodeId: null,
           };
         }
 
@@ -3459,6 +5095,13 @@
             y: 0,
             align: "center",
             verticalAlign: "none",
+          };
+        }
+
+        if (type === "yawpitch") {
+          return {
+            yaw: 0,
+            pitch: 0,
           };
         }
 
@@ -3504,7 +5147,6 @@
             radialShape: "circle",
             radialPosition: "center",
             conicAngle: 0,
-            imageNodeId: null,
           };
         }
 
@@ -3512,7 +5154,8 @@
           return {
             mode: "image",
             imageUrl: "",
-            size: "cover",
+            previewImageUrl: "",
+            size: "contain",
             position: "center",
             repeat: "no-repeat",
           };
@@ -3589,6 +5232,19 @@
           };
         }
 
+        if (type === "transparency") {
+          return {
+            target: "button",
+            opacity: 100,
+          };
+        }
+
+        if (type === "cursorstyle") {
+          return {
+            cursor: "pointer",
+          };
+        }
+
         if (type === "textstyle") {
           return {
             fontFamily: "Segoe UI",
@@ -3631,6 +5287,284 @@
           .replaceAll("<", "&lt;")
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;");
+      }
+
+      function highlightSearchMatch(text, query) {
+        const safeText = String(text || "");
+        const safeQuery = String(query || "").trim();
+        if (!safeQuery) {
+          return escapeHtml(safeText);
+        }
+
+        const lowerText = safeText.toLowerCase();
+        const lowerQuery = safeQuery.toLowerCase();
+        let startIndex = 0;
+        let html = "";
+
+        while (startIndex < safeText.length) {
+          const matchIndex = lowerText.indexOf(lowerQuery, startIndex);
+          if (matchIndex === -1) {
+            html += escapeHtml(safeText.slice(startIndex));
+            break;
+          }
+
+          html += escapeHtml(safeText.slice(startIndex, matchIndex));
+          html += `<span class="node-search-match">${escapeHtml(
+            safeText.slice(matchIndex, matchIndex + safeQuery.length)
+          )}</span>`;
+          startIndex = matchIndex + safeQuery.length;
+        }
+
+        return html;
+      }
+
+      function getHelpSectionSubtitle(title, itemCount, kind) {
+        if (kind === "button") {
+          if (title === "Top Bar Buttons") {
+            return `${itemCount} toolbar controls that change the workspace view or open utility panels.`;
+          }
+          if (title === "Sidebar Buttons") {
+            return `${itemCount} sidebar shortcuts for finding and browsing available nodes.`;
+          }
+          if (title === "Editor Tabs") {
+            return `${itemCount} view switches for moving between graph editing and output preview.`;
+          }
+        }
+        return `${itemCount} node types in this category and what each one changes when connected.`;
+      }
+
+      function getHelpVisualMarkup(kind, key, label, category) {
+        const accentByCategory = {
+          Roots: "#64a9ff",
+          Layout: "#7fd2a6",
+          Fill: "#f0b45a",
+          Text: "#d88bff",
+          Effects: "#7dc5ff",
+          Motion: "#ff8f72",
+        };
+        const accent = accentByCategory[category] || "#8aa1c6";
+
+        if (kind === "button") {
+          const buttonVisuals = {
+            reset: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <path d="M10 15a8 8 0 1 0 3-6" fill="none" stroke="${accent}" stroke-width="2.4" stroke-linecap="round"/>
+                <path d="M9 7v6h6" fill="none" stroke="#eef3ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            `,
+            center: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <path d="M22 4v6M22 20v6M6 15h6M32 15h6" fill="none" stroke="${accent}" stroke-width="2"/>
+                <circle cx="22" cy="15" r="4" fill="none" stroke="#eef3ff" stroke-width="2"/>
+              </svg>
+            `,
+            preview: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <rect x="6" y="8" width="32" height="14" fill="none" stroke="${accent}" stroke-width="2"/>
+                <path d="M14 15h16" stroke="#eef3ff" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            `,
+            zoom: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <circle cx="18" cy="13" r="7" fill="none" stroke="${accent}" stroke-width="2"/>
+                <path d="M24 19l7 7M14 13h8M18 9v8" stroke="#eef3ff" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            `,
+            help: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <circle cx="22" cy="15" r="10" fill="none" stroke="${accent}" stroke-width="2"/>
+                <path d="M18.5 12a3.5 3.5 0 1 1 5.5 2.8c-1 .7-1.8 1.4-1.8 2.7" fill="none" stroke="#eef3ff" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="22" cy="22" r="1.2" fill="#eef3ff"/>
+              </svg>
+            `,
+            search: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <circle cx="19" cy="13" r="7" fill="none" stroke="${accent}" stroke-width="2"/>
+                <path d="M25 19l7 6" stroke="#eef3ff" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            `,
+            editor: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <rect x="6" y="7" width="32" height="16" fill="none" stroke="${accent}" stroke-width="2"/>
+                <circle cx="15" cy="15" r="2.2" fill="#eef3ff"/>
+                <circle cx="29" cy="15" r="2.2" fill="#eef3ff"/>
+                <path d="M17 15h10" stroke="#eef3ff" stroke-width="2"/>
+              </svg>
+            `,
+            previewTab: `
+              <svg viewBox="0 0 44 30" aria-hidden="true">
+                <rect x="7" y="7" width="30" height="16" fill="none" stroke="${accent}" stroke-width="2"/>
+                <path d="M12 15s4-5 10-5 10 5 10 5-4 5-10 5-10-5-10-5Z" fill="none" stroke="#eef3ff" stroke-width="1.8"/>
+                <circle cx="22" cy="15" r="2.2" fill="#eef3ff"/>
+              </svg>
+            `,
+          };
+          return buttonVisuals[key] || `
+            <svg viewBox="0 0 44 30" aria-hidden="true">
+              <rect x="7" y="7" width="30" height="16" fill="none" stroke="${accent}" stroke-width="2"/>
+            </svg>
+          `;
+        }
+
+        return `
+          <svg viewBox="0 0 44 30" aria-hidden="true">
+            <rect x="5" y="5" width="34" height="20" fill="none" stroke="${accent}" stroke-width="2"/>
+            <circle cx="12" cy="15" r="3" fill="${accent}"/>
+            <path d="M18 15h14" stroke="#eef3ff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        `;
+      }
+
+      function buildHelpSectionsMarkup() {
+        const buttonGroups = new Map();
+        for (const item of HELP_BUTTONS) {
+          if (!buttonGroups.has(item.section)) {
+            buttonGroups.set(item.section, []);
+          }
+          buttonGroups.get(item.section).push(item);
+        }
+
+        const nodeGroups = new Map();
+        for (const [type, def] of Object.entries(NODE_DEFS)) {
+          if (!def.category) {
+            continue;
+          }
+          if (!nodeGroups.has(def.category)) {
+            nodeGroups.set(def.category, []);
+          }
+          nodeGroups.get(def.category).push({ type, ...def });
+        }
+
+        const buttonSections = [...buttonGroups.entries()].map(
+          ([title, items], index) => `
+            <details class="help-section"${index === 0 ? " open" : ""}>
+              <summary>
+                <span class="help-section-summary-copy">
+                  <span class="help-section-summary-title">${escapeHtml(title)}</span>
+                  <span class="help-section-summary-subtitle">${escapeHtml(
+                    getHelpSectionSubtitle(title, items.length, "button")
+                  )}</span>
+                </span>
+              </summary>
+              <div class="help-section-body">
+                ${items
+                  .map(
+                    (item) => `
+                      <div class="help-item">
+                        <div class="help-item-visual">${getHelpVisualMarkup("button", item.key, item.label)}</div>
+                        <div class="help-item-copy">
+                          <div class="help-item-title">${escapeHtml(item.label)}</div>
+                          <div class="help-item-description">${escapeHtml(item.description)}</div>
+                        </div>
+                      </div>
+                    `
+                  )
+                  .join("")}
+              </div>
+            </details>
+          `
+        );
+
+        const nodeSections = [...nodeGroups.entries()].map(
+          ([title, defs]) => `
+            <details class="help-section">
+              <summary>
+                <span class="help-section-summary-copy">
+                  <span class="help-section-summary-title">${escapeHtml(`${title} Nodes`)}</span>
+                  <span class="help-section-summary-subtitle">${escapeHtml(
+                    getHelpSectionSubtitle(title, defs.length, "node")
+                  )}</span>
+                </span>
+              </summary>
+              <div class="help-section-body">
+                ${defs
+                  .sort((a, b) => a.label.localeCompare(b.label))
+                  .map(
+                    (def) => `
+                      <div class="help-item">
+                        <div class="help-item-visual">${getHelpVisualMarkup("node", def.type, def.label, def.category)}</div>
+                        <div class="help-item-copy">
+                          <div class="help-item-title">${escapeHtml(def.label)}</div>
+                          <div class="help-item-description">${escapeHtml(
+                            def.helpDescription || def.description || ""
+                          )}</div>
+                        </div>
+                      </div>
+                    `
+                  )
+                  .join("")}
+              </div>
+            </details>
+          `
+        );
+
+        return `
+          <div class="help-intro">
+            NodeForge is a visual node-based editor for building UI layouts, styling elements, and shaping how each object looks and behaves through connected nodes. Instead of writing everything out manually, you assemble behavior and appearance by linking focused node types together, which makes it easier to experiment, understand, and refine a design system visually. Open the sections below to learn what the main controls do, what each node is meant to affect, and how the different parts of the editor fit together.
+          </div>
+          ${buttonSections.join("")}
+          ${nodeSections.join("")}
+        `;
+      }
+
+      function updateHelpBackToTopVisibility() {
+        if (!helpContent || !helpBackToTopBtn) {
+          return;
+        }
+        helpBackToTopBtn.classList.toggle("is-visible", helpContent.scrollTop > 24);
+      }
+
+      function scrollHelpToTop() {
+        if (!helpContent) {
+          return;
+        }
+        if (helpScrollAnimationFrame) {
+          cancelAnimationFrame(helpScrollAnimationFrame);
+          helpScrollAnimationFrame = 0;
+        }
+
+        const startTop = helpContent.scrollTop;
+        if (startTop <= 0) {
+          updateHelpBackToTopVisibility();
+          return;
+        }
+
+        const duration = 500;
+        const startTime = performance.now();
+        const easeInOutCubic = (t) =>
+          t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        const tick = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(1, elapsed / duration);
+          const eased = easeInOutCubic(progress);
+          helpContent.scrollTop = startTop * (1 - eased);
+          updateHelpBackToTopVisibility();
+          if (progress < 1) {
+            helpScrollAnimationFrame = requestAnimationFrame(tick);
+          } else {
+            helpScrollAnimationFrame = 0;
+            helpContent.scrollTop = 0;
+            updateHelpBackToTopVisibility();
+          }
+        };
+
+        helpScrollAnimationFrame = requestAnimationFrame(tick);
+      }
+
+      function openHelpModal() {
+        helpContent.innerHTML = buildHelpSectionsMarkup();
+        helpContent.scrollTop = 0;
+        helpModal.hidden = false;
+        updateHelpBackToTopVisibility();
+      }
+
+      function closeHelpModal() {
+        if (helpScrollAnimationFrame) {
+          cancelAnimationFrame(helpScrollAnimationFrame);
+          helpScrollAnimationFrame = 0;
+        }
+        helpModal.hidden = true;
       }
 
       function getFillConfig(nodeData, prefix, fallbackSolid = "#ffffff", fallbackEnd = "#c8d2e8") {
@@ -4060,6 +5994,15 @@
         return `${x}px ${y}px ${blur}px ${color}`;
       }
 
+      function buildYawPitchTransform(data) {
+        const yaw = clamp(Number(data?.yaw) || 0, -89, 89);
+        const pitch = clamp(Number(data?.pitch) || 0, -89, 89);
+        if (!yaw && !pitch) {
+          return "";
+        }
+        return `perspective(700px) rotateX(${pitch}deg) rotateY(${yaw}deg)`;
+      }
+
       function radialPositionPercent(position) {
         if (position === "top") return { x: "50%", y: "0%" };
         if (position === "bottom") return { x: "50%", y: "100%" };
@@ -4297,7 +6240,7 @@
           previewAnimationFrameId = 0;
         }
 
-        const animatedShells = getPreviewTargets().flatMap((target) => [
+        const animatedShells = getRenderablePreviewTargets().flatMap((target) => [
           ...target.querySelectorAll(".preview-btn-shell[data-animation-config]"),
         ]);
         if (!animatedShells.length) {
@@ -4329,7 +6272,7 @@
         target.style.backgroundImage = "none";
       }
 
-      function renderButtonLabelSvg(buttonNode, textStrokeData, textStyleData, textPositionData, width, height, fontSize, textColorData, textBackgroundData = null) {
+      function renderButtonLabelSvg(buttonNode, textStrokeData, textStyleData, textPositionData, width, height, fontSize, textColorData, textBackgroundData = null, textStrokeOpacity = 1) {
         const textStrokeWidth = Math.max(0, Number(textStrokeData?.width) || 0);
         const textStyle = getResolvedTextStyle(textStyleData);
         const textFillConfig = getResolvedTextFillData(textColorData, "#ffffff", "#cfd6ea");
@@ -4435,6 +6378,7 @@
               fill="${textFillGradient.paint}"
               stroke="${textStrokeWidth > 0 ? gradient.paint : "none"}"
               stroke-width="${textStrokeWidth}"
+              stroke-opacity="${textStrokeWidth > 0 ? clamp(textStrokeOpacity, 0, 1) : 1}"
               paint-order="stroke fill"
               stroke-linejoin="round"
             >${tspanMarkup}</text>
@@ -4442,7 +6386,7 @@
         `;
       }
 
-      function renderTextBlockSvg(textValue, idSeed, textStrokeData, textStyleData, textPositionData, width, height, fontSize, textColor, textBackgroundData = null, fallbackText = "Text") {
+      function renderTextBlockSvg(textValue, idSeed, textStrokeData, textStyleData, textPositionData, width, height, fontSize, textColor, textBackgroundData = null, fallbackText = "Text", textStrokeOpacity = 1) {
         return renderButtonLabelSvg(
           { id: idSeed, data: { text: textValue || fallbackText } },
           textStrokeData,
@@ -4452,11 +6396,12 @@
           height,
           fontSize,
           textColor,
-          textBackgroundData
+          textBackgroundData,
+          textStrokeOpacity
         );
       }
 
-      function renderTextLabelHtml(textValue, textStyleData, textStrokeData, fontSize, textColorData, textShadowCss, blockWidth, textBackgroundData = null, fallbackText = "Text Label") {
+      function renderTextLabelHtml(textValue, textStyleData, textStrokeData, fontSize, textColorData, textShadowCss, blockWidth, textBackgroundData = null, fallbackText = "Text Label", textStrokeOpacity = 1) {
         const textStyle = getResolvedTextStyle(textStyleData);
         const lines = String(textValue || fallbackText).split(/\r?\n/);
         const textAlign = textStyleData?.align || "left";
@@ -4468,7 +6413,7 @@
           textStrokeData?.solid || textStrokeData?.start || "#1d2433",
           "#1d2433"
         );
-        const strokeCss = strokeWidth > 0 ? `${strokeWidth}px ${strokeColor}` : "0 transparent";
+        const strokeCss = strokeWidth > 0 ? `${strokeWidth}px ${colorWithOpacity(strokeColor, textStrokeOpacity, "#1d2433")}` : "0 transparent";
         const lineMarkup = lines
           .map((line, index) => {
             const safeLine = escapeHtml(line || " ");
@@ -4523,6 +6468,36 @@
             "
           >${lineMarkup}</div>
         `;
+      }
+
+      function getTransparencyOpacityValue(transparencyNode, expectedTarget = null) {
+        if (!transparencyNode || transparencyNode.type !== "transparency") {
+          return 1;
+        }
+        if (expectedTarget && transparencyNode.data?.target !== expectedTarget) {
+          return 1;
+        }
+        return clamp((Number(transparencyNode.data?.opacity) || 0) / 100, 0, 1);
+      }
+
+      function getActiveLayerRootNode() {
+        if (!activeLayerId || activeLayerId === "background") {
+          return null;
+        }
+        return graph.nodes.find(
+          (node) =>
+            isButtonRootType(node.type) &&
+            node.layerId === activeLayerId &&
+            (node.interactionKind || null) === null
+        ) || null;
+      }
+
+      function getDefaultTransparencyTarget() {
+        const rootNode = getActiveLayerRootNode();
+        if (rootNode?.type === "textlabel" || rootNode?.type === "richtextlabel") {
+          return "text";
+        }
+        return "button";
       }
 
       function sanitizeRichTextHtml(htmlValue, fallbackText = "Rich Text") {
@@ -4696,26 +6671,7 @@
         el.style.left = node.x + "px";
         el.style.top = node.y + "px";
 
-        const titleMap = {
-          buttonsc: "Button SC",
-          textlabel: "Text Label",
-          richtextlabel: "Rich Text Label",
-          input: "Input",
-          image: "Image",
-          textcolor: "Text Color",
-          textbackground: "Text Background",
-          textstroke: "Text Stroke",
-          textstyle: "Text Styles",
-          textposition: "Text Position",
-          textalignment: "Text Alignment",
-          animation: "Animation",
-          background: "Background",
-          stroke: "Button Stroke",
-          shadow: "Shadow",
-          radius: "Corner Radius",
-        };
-        const title = titleMap[node.type] ||
-          node.type.charAt(0).toUpperCase() + node.type.slice(1);
+        const title = getNodeLabel(node.type);
 
         let body = "";
 
@@ -4780,6 +6736,15 @@
               </div>
               <div class="port-group">
                 <div class="port shadow in" data-port-kind="in" data-port-role="shadow"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Transparency</div>
+              </div>
+              <div class="port-group">
+                <div class="port transparency in" data-port-kind="in" data-port-role="transparency"></div>
               </div>
             </div>
 
@@ -4857,6 +6822,15 @@
                 <div class="port shadow in" data-port-kind="in" data-port-role="shadow"></div>
               </div>
             </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Transparency</div>
+              </div>
+              <div class="port-group">
+                <div class="port transparency in" data-port-kind="in" data-port-role="transparency"></div>
+              </div>
+            </div>
           `;
         }
 
@@ -4918,6 +6892,15 @@
               </div>
               <div class="port-group">
                 <div class="port stroke in" data-port-kind="in" data-port-role="stroke"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Transparency</div>
+              </div>
+              <div class="port-group">
+                <div class="port transparency in" data-port-kind="in" data-port-role="transparency"></div>
               </div>
             </div>
 
@@ -4997,6 +6980,15 @@
 
             <div class="port-row">
               <div class="port-group">
+                <div class="port-label">Transparency</div>
+              </div>
+              <div class="port-group">
+                <div class="port transparency in" data-port-kind="in" data-port-role="transparency"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
                 <div class="port-label">Shadow</div>
               </div>
               <div class="port-group">
@@ -5019,6 +7011,15 @@
               </div>
               <div class="port-group">
                 <div class="port animation in" data-port-kind="in" data-port-role="animation"></div>
+              </div>
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Cursor Style</div>
+              </div>
+              <div class="port-group">
+                <div class="port cursorStyle in" data-port-kind="in" data-port-role="cursorStyle"></div>
               </div>
             </div>
 
@@ -5108,6 +7109,74 @@
                 <div class="port-label">Output</div>
               </div>
               <div class="badge">MOTION</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "transparency") {
+          body = `
+            <div class="row">
+              <div>
+                <div class="field-label">Affects</div>
+                <select class="select-input" data-field="target">
+                  <option value="button" ${node.data.target === "button" ? "selected" : ""}>Button</option>
+                  <option value="text" ${node.data.target === "text" ? "selected" : ""}>Text</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-label">Opacity %</div>
+                <input class="num-input" data-field="opacity" type="number" min="0" max="100" step="1" value="${node.data.opacity}">
+              </div>
+            </div>
+
+            <div class="small-note">
+              Connect this to a root node to fade button fill or text, or connect it to a stroke node to fade the stroke.
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port transparency out" data-port-kind="out" data-port-role="transparency"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">ALPHA</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "cursorstyle") {
+          body = `
+            <div>
+              <div class="field-label">Cursor Type</div>
+              <div class="cursor-style-grid">
+                ${getCursorStyleOptions()
+                  .map(
+                    (option) => `
+                      <button
+                        class="cursor-style-option ${node.data.cursor === option.value ? "active" : ""}"
+                        type="button"
+                        data-cursor-style="${option.value}"
+                        title="${escapeHtml(option.label)}"
+                        aria-label="${escapeHtml(option.label)}"
+                      >
+                        ${option.icon}
+                        <span>${escapeHtml(option.label)}</span>
+                      </button>
+                    `
+                  )
+                  .join("")}
+              </div>
+            </div>
+
+            <div class="small-note">
+              Connect this to a Button node to control the hover cursor.
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port cursorStyle out" data-port-kind="out" data-port-role="cursorStyle"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">CURSOR</div>
             </div>
           `;
         }
@@ -5414,6 +7483,33 @@
                 <div class="port-label">Output</div>
               </div>
               <div class="badge">TEXT POSITION</div>
+            </div>
+          `;
+        }
+
+        if (node.type === "yawpitch") {
+          body = `
+            <div class="row">
+              <div>
+                <div class="field-label">Yaw</div>
+                <input class="num-input" data-field="yaw" type="number" min="-89" max="89" value="${node.data.yaw}">
+              </div>
+              <div>
+                <div class="field-label">Pitch</div>
+                <input class="num-input" data-field="pitch" type="number" min="-89" max="89" value="${node.data.pitch}">
+              </div>
+            </div>
+
+            <div class="small-note">
+              Connect this into a Position port to tilt button and label text in 3D.
+            </div>
+
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port yawPitch out" data-port-kind="out" data-port-role="yawPitch"></div>
+                <div class="port-label">Output</div>
+              </div>
+              <div class="badge">TILT</div>
             </div>
           `;
         }
@@ -5770,9 +7866,8 @@
               <div>
                 <div class="field-label">Fit</div>
                 <select class="select-input" data-field="size">
-                  <option value="cover" ${node.data.size === "cover" ? "selected" : ""}>Cover</option>
-                  <option value="contain" ${node.data.size === "contain" ? "selected" : ""}>Contain</option>
-                  <option value="100% 100%" ${node.data.size === "100% 100%" ? "selected" : ""}>Stretch</option>
+                  <option value="contain" ${normalizeImageFit(node.data.size) === "contain" ? "selected" : ""}>Contain</option>
+                  <option value="cover" ${normalizeImageFit(node.data.size) === "cover" ? "selected" : ""}>Cover</option>
                 </select>
               </div>
               <div>
@@ -5977,6 +8072,14 @@
             ${renderFillControls("", "Stroke Fill", node.data, { solid: "#ffffff", end: "#b9c6e3" })}
             <div class="port-row">
               <div class="port-group">
+                <div class="port-label">Transparency</div>
+              </div>
+              <div class="port-group">
+                <div class="port transparency in" data-port-kind="in" data-port-role="transparency"></div>
+              </div>
+            </div>
+            <div class="port-row">
+              <div class="port-group">
                 <div class="port stroke out" data-port-kind="out" data-port-role="stroke"></div>
                 <div class="port-label">Output</div>
               </div>
@@ -5994,6 +8097,14 @@
               }">
             </div>
             ${renderFillControls("", "Text Stroke", node.data, { solid: "#1d2433", end: "#43516f" })}
+            <div class="port-row">
+              <div class="port-group">
+                <div class="port-label">Transparency</div>
+              </div>
+              <div class="port-group">
+                <div class="port transparency in" data-port-kind="in" data-port-role="transparency"></div>
+              </div>
+            </div>
             <div class="port-row">
               <div class="port-group">
                 <div class="port textStroke out" data-port-kind="out" data-port-role="textStroke"></div>
@@ -6253,10 +8364,16 @@
             if (!file) {
               return;
             }
+            setNodePreviewImageUrl(node, URL.createObjectURL(file));
+            rememberNodeImageUrl(node);
+            refreshNode(node.id);
+            refreshConnectedColorNodes(node.id);
+            updatePreview();
+            drawConnections();
             const reader = new FileReader();
             reader.onload = () => {
               node.data.imageUrl = String(reader.result || "");
-              warmImageAsset(node.data.imageUrl);
+              rememberNodeImageUrl(node);
               refreshNode(node.id);
               refreshConnectedColorNodes(node.id);
               updatePreview();
@@ -6281,11 +8398,17 @@
             if (!file) {
               return;
             }
+            setNodePreviewImageUrl(node, URL.createObjectURL(file));
+            rememberNodeImageUrl(node);
+            refreshNode(node.id);
+            refreshConnectedColorNodes(node.id);
+            updatePreview();
+            drawConnections();
             const reader = new FileReader();
             reader.onload = () => {
               node.data.imageUrl = String(reader.result || "");
               inputEl.value = node.data.imageUrl;
-              warmImageAsset(node.data.imageUrl);
+              rememberNodeImageUrl(node);
               refreshNode(node.id);
               refreshConnectedColorNodes(node.id);
               updatePreview();
@@ -6340,6 +8463,17 @@
           refreshNode(node.id);
         });
 
+        el.querySelectorAll("[data-cursor-style]").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (node.type !== "cursorstyle") {
+              return;
+            }
+            node.data.cursor = btn.dataset.cursorStyle || "pointer";
+            refreshNode(node.id);
+          });
+        });
+
         for (const input of el.querySelectorAll("input, select, textarea")) {
           input.addEventListener("input", () => {
             if (node.type === "animation" && input.dataset.keyframeField) {
@@ -6376,6 +8510,9 @@
 
             if (mappedField && Object.prototype.hasOwnProperty.call(node.data, mappedField)) {
               node.data[mappedField] = value;
+              if (node.type === "image" && mappedField === "imageUrl") {
+                setNodePreviewImageUrl(node, "");
+              }
               const textField = el.querySelector(
                 `.text-input[data-field="${mappedField}"]`
               );
@@ -6458,7 +8595,7 @@
                 `.node[data-node-id="${node.id}"]`
               );
               const previewSwatch = nodeEl?.querySelector(".color-preview");
-              warmImageAsset(node.data.imageUrl);
+              rememberNodeImageUrl(node);
               if (previewSwatch) {
                 previewSwatch.style.background = buildColorFill(node.data);
               }
@@ -6575,6 +8712,7 @@
 
         setupFontPicker(node, el);
         setupRichTextEditor(node, el);
+        setupNumberScrubbers(el);
 
         for (const port of el.querySelectorAll(".port")) {
           port.addEventListener("mousedown", (e) => {
@@ -6738,11 +8876,7 @@
           return;
         }
 
-        const canConnectToRoot = isButtonRootType(to.type);
-        const canConnectImageToColor =
-          to.type === "color" && role === "fillSource" && from.type === "image";
-
-        if (!canConnectToRoot && !canConnectImageToColor) {
+        if (!canConnectNodes(from, to, role)) {
           showStatus("That connection is not supported");
           return;
         }
@@ -6756,8 +8890,6 @@
           toNodeId,
           role,
         });
-
-        assignConnectionRole(to, role, fromNodeId);
 
         showStatus(`${getRoleLabel(role)} connected`);
         drawConnections();
@@ -6808,6 +8940,7 @@
         if (role === "text") return "#f29f78";
         if (role === "position") return "#d48b42";
         if (role === "textPosition") return "#ffb36b";
+        if (role === "yawPitch") return "#f0a16a";
         if (role === "animation") return "#6db2ff";
         if (role === "scale") return "#8971ff";
         if (role === "color") return "#d85f95";
@@ -6817,8 +8950,10 @@
         if (role === "stroke") return "#f0c36a";
         if (role === "textStroke") return "#76c7ff";
         if (role === "textStyle") return "#f29f78";
+        if (role === "transparency") return "#9db4ff";
         if (role === "shadow") return "#8a93b8";
         if (role === "radius") return "#9ae27d";
+        if (role === "cursorStyle") return "#bcc4d6";
         return "#85b0ff";
       }
 
@@ -6992,10 +9127,7 @@
           return colorNode.data;
         }
 
-        const imageNode =
-          getConnectedNode(colorNode, "fillSource") ||
-          graph.nodes.find((node) => node.id === colorNode.data?.imageNodeId) ||
-          null;
+        const imageNode = getConnectedNode(colorNode, "fillSource") || null;
 
         if (imageNode?.type === "image") {
           return imageNode.data;
@@ -7007,7 +9139,7 @@
       function warmNodeImageAssets() {
         for (const node of graph.nodes) {
           if (node.type === "image") {
-            warmImageAsset(node.data?.imageUrl);
+            rememberNodeImageUrl(node);
           }
         }
       }
@@ -7033,6 +9165,17 @@
         return fallback;
       }
 
+      function colorWithOpacity(value, opacity, fallback = "#000000") {
+        const hex = normalizeHex(value, fallback);
+        const normalized = hex.length === 4
+          ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+          : hex;
+        const r = Number.parseInt(normalized.slice(1, 3), 16);
+        const g = Number.parseInt(normalized.slice(3, 5), 16);
+        const b = Number.parseInt(normalized.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${clamp(opacity, 0, 1)})`;
+      }
+
       function radialPositionCss(position) {
         if (position === "top") return "center top";
         if (position === "bottom") return "center bottom";
@@ -7048,6 +9191,10 @@
           .replace(/\r?\n/g, "");
       }
 
+      function normalizeImageFit(value) {
+        return value === "100% 100%" ? "contain" : value || "contain";
+      }
+
       function buildColorFill(colorData) {
         if (!colorData) {
           return "linear-gradient(#2e7bf5,#215fc0)";
@@ -7055,12 +9202,11 @@
 
         const mode = colorData.mode || "solid";
         if (mode === "image") {
-          const imageUrl = String(colorData.imageUrl || "").trim();
+          const imageUrl = getImageAssetSource(colorData);
           if (!imageUrl) {
             return "linear-gradient(#2e7bf5,#215fc0)";
           }
-          warmImageAsset(imageUrl);
-          const size = colorData.size || "cover";
+          const size = normalizeImageFit(colorData.size);
           const position = colorData.position || "center";
           const repeat = colorData.repeat || "no-repeat";
           return `${position} / ${size} ${repeat} url("${cssUrlValue(imageUrl)}")`;
@@ -7098,10 +9244,125 @@
         return solid;
       }
 
+      function previewImagePosition(position) {
+        if (position === "top") return "50% 0%";
+        if (position === "bottom") return "50% 100%";
+        if (position === "left") return "0% 50%";
+        if (position === "right") return "100% 50%";
+        return "50% 50%";
+      }
+
+      function buildPreviewFillState(colorData, fallback = "linear-gradient(#2e7bf5,#215fc0)") {
+        if (!colorData) {
+          return {
+            background: fallback,
+            imageUrl: "",
+            useImageElement: false,
+            objectFit: "cover",
+            objectPosition: "50% 50%",
+          };
+        }
+
+        if (colorData.mode === "image") {
+          const imageUrl = getImageAssetSource(colorData);
+          const repeat = colorData.repeat || "no-repeat";
+          if (imageUrl && repeat === "no-repeat") {
+            const size = normalizeImageFit(colorData.size);
+            return {
+              background: "transparent",
+              imageUrl,
+              useImageElement: true,
+              objectFit: size === "cover" ? "cover" : "contain",
+              objectPosition: previewImagePosition(colorData.position || "center"),
+            };
+          }
+        }
+
+        return {
+          background: buildColorFill(colorData),
+          imageUrl: "",
+          useImageElement: false,
+          objectFit: "cover",
+          objectPosition: "50% 50%",
+        };
+      }
+
+      function parseObjectPosition(position) {
+        const [xRaw = "50%", yRaw = "50%"] = String(position || "50% 50%").split(" ");
+        const toRatio = (value) => {
+          const num = Number.parseFloat(value);
+          if (!Number.isFinite(num)) return 0.5;
+          return String(value).includes("%") ? clamp(num / 100, 0, 1) : clamp(num, 0, 1);
+        };
+        return { x: toRatio(xRaw), y: toRatio(yRaw) };
+      }
+
+      function drawPreviewImageToCanvas(canvasEl, fillState) {
+        if (!canvasEl) {
+          return;
+        }
+
+        const imageUrl = String(fillState?.imageUrl || "").trim();
+        if (!imageUrl) {
+          canvasEl.style.display = "none";
+          return;
+        }
+
+        const asset = imageAssetCache.get(imageUrl);
+        const img = asset?.img;
+        if (!img || asset?.status !== "loaded") {
+          canvasEl.style.display = "none";
+          return;
+        }
+
+        const width = Math.max(1, Math.round(canvasEl.clientWidth));
+        const height = Math.max(1, Math.round(canvasEl.clientHeight));
+        const dpr = window.devicePixelRatio || 1;
+        const renderWidth = Math.max(1, Math.round(width * dpr));
+        const renderHeight = Math.max(1, Math.round(height * dpr));
+        if (canvasEl.width !== renderWidth || canvasEl.height !== renderHeight) {
+          canvasEl.width = renderWidth;
+          canvasEl.height = renderHeight;
+        }
+
+        const ctx = canvasEl.getContext("2d");
+        if (!ctx) {
+          canvasEl.style.display = "none";
+          return;
+        }
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, renderWidth, renderHeight);
+        ctx.scale(dpr, dpr);
+
+        const fit = fillState.objectFit || "cover";
+        if (fit === "fill") {
+          ctx.drawImage(img, 0, 0, width, height);
+          canvasEl.style.display = "block";
+          return;
+        }
+
+        const scale =
+          fit === "contain"
+            ? Math.min(width / img.naturalWidth, height / img.naturalHeight)
+            : Math.max(width / img.naturalWidth, height / img.naturalHeight);
+        const drawWidth = img.naturalWidth * scale;
+        const drawHeight = img.naturalHeight * scale;
+        const anchor = parseObjectPosition(fillState.objectPosition);
+        const drawX = (width - drawWidth) * anchor.x;
+        const drawY = (height - drawHeight) * anchor.y;
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        canvasEl.style.display = "block";
+      }
+
       function removeNode(nodeId) {
         const node = graph.nodes.find((n) => n.id === nodeId);
         if (!node) {
           return;
+        }
+
+        if (node.type === "image") {
+          setNodePreviewImageUrl(node, "");
         }
 
         if (activeTextRichEditorNodeId === nodeId) {
@@ -7135,26 +9396,6 @@
           }
         }
 
-        for (const buttonNode of graph.nodes.filter((n) => isButtonRootType(n.type))) {
-          if (buttonNode.data.positionNodeId === nodeId) buttonNode.data.positionNodeId = null;
-          if (buttonNode.data.textPositionNodeId === nodeId) buttonNode.data.textPositionNodeId = null;
-          if (buttonNode.data.textAlignmentNodeId === nodeId) buttonNode.data.textAlignmentNodeId = null;
-          if (buttonNode.data.animationNodeId === nodeId) buttonNode.data.animationNodeId = null;
-          if (buttonNode.data.scaleNodeId === nodeId) buttonNode.data.scaleNodeId = null;
-          if (buttonNode.data.colorNodeId === nodeId) buttonNode.data.colorNodeId = null;
-          if (buttonNode.data.textColorNodeId === nodeId) buttonNode.data.textColorNodeId = null;
-          if (buttonNode.data.textBackgroundNodeId === nodeId) buttonNode.data.textBackgroundNodeId = null;
-          if (buttonNode.data.strokeNodeId === nodeId) buttonNode.data.strokeNodeId = null;
-          if (buttonNode.data.textStrokeNodeId === nodeId) buttonNode.data.textStrokeNodeId = null;
-          if (buttonNode.data.textStyleNodeId === nodeId) buttonNode.data.textStyleNodeId = null;
-          if (buttonNode.data.shadowNodeId === nodeId) buttonNode.data.shadowNodeId = null;
-          if (buttonNode.data.radiusNodeId === nodeId) buttonNode.data.radiusNodeId = null;
-        }
-
-        for (const colorNode of graph.nodes.filter((n) => n.type === "color")) {
-          if (colorNode.data.imageNodeId === nodeId) colorNode.data.imageNodeId = null;
-        }
-
         updateLayerControls();
         rerenderCanvas();
         updatePreview();
@@ -7170,6 +9411,7 @@
         warmNodeImageAssets();
         syncPreviewViewportFrames();
         const activePreview = getActivePreviewEl();
+        const renderTargets = getRenderablePreviewTargets();
 
         const previewNodes = getButtonNodes();
         const buttonNodes = previewNodes.filter((n) => n.type === "button" || n.type === "buttonsc");
@@ -7177,16 +9419,22 @@
         const richTextLabelNodes = previewNodes.filter((n) => n.type === "richtextlabel");
         const inputNodes = previewNodes.filter((n) => n.type === "input");
         const backgroundNode = getLatestNodeByType("background");
-        getPreviewTargets().forEach((target) => {
+        renderTargets.forEach((target) => {
           applyPreviewSurfaceBackground(target, backgroundNode);
         });
 
         if (!previewNodes.length) {
-          getPreviewTargets().forEach((target) => {
+          renderTargets.forEach((target) => {
             target.innerHTML = `<div class="preview-empty">No preview node found.</div>`;
+            target.dataset.previewSignature = "empty";
           });
+          syncImportEditorFromGraph();
           return;
         }
+
+        const buttonRenderEntries = [];
+        const textRenderEntries = [];
+        const inputRenderEntries = [];
 
         const buttonMarkup = buttonNodes
           .map((buttonNode) => {
@@ -7241,6 +9489,7 @@
                 }
               : getConnectedNode(buttonNode, "stroke");
             const textStrokeNode = getConnectedNode(buttonNode, "textStroke");
+            const transparencyNode = getConnectedNode(buttonNode, "transparency");
             const shadowNode = isSimpleButton
               ? {
                   data: {
@@ -7255,6 +9504,8 @@
               : getConnectedNode(buttonNode, "shadow");
             const textStyleNode = getConnectedNode(buttonNode, "textStyle");
             const textBackgroundNode = getConnectedNode(buttonNode, "textBackground");
+            const yawPitchNode = getConnectedNode(buttonNode, "yawPitch");
+            const cursorStyleNode = getConnectedNode(buttonNode, "cursorStyle");
             const radiusNode = isSimpleButton
               ? {
                   data: {
@@ -7276,9 +9527,12 @@
               textBackgroundNode: getInteractionNode(buttonNode.layerId, "hover", "textbackground"),
               strokeNode: getInteractionNode(buttonNode.layerId, "hover", "stroke"),
               textStrokeNode: getInteractionNode(buttonNode.layerId, "hover", "textstroke"),
+              transparencyNode: getInteractionNode(buttonNode.layerId, "hover", "transparency"),
               textStyleNode: getInteractionNode(buttonNode.layerId, "hover", "textstyle"),
               shadowNode: getInteractionNode(buttonNode.layerId, "hover", "shadow"),
               radiusNode: getInteractionNode(buttonNode.layerId, "hover", "radius"),
+              yawPitchNode: getInteractionNode(buttonNode.layerId, "hover", "yawpitch"),
+              cursorStyleNode: getInteractionNode(buttonNode.layerId, "hover", "cursorstyle"),
             };
             const clickOverrides = {
               positionNode: getInteractionNode(buttonNode.layerId, "click", "position"),
@@ -7289,9 +9543,12 @@
               textBackgroundNode: getInteractionNode(buttonNode.layerId, "click", "textbackground"),
               strokeNode: getInteractionNode(buttonNode.layerId, "click", "stroke"),
               textStrokeNode: getInteractionNode(buttonNode.layerId, "click", "textstroke"),
+              transparencyNode: getInteractionNode(buttonNode.layerId, "click", "transparency"),
               textStyleNode: getInteractionNode(buttonNode.layerId, "click", "textstyle"),
               shadowNode: getInteractionNode(buttonNode.layerId, "click", "shadow"),
               radiusNode: getInteractionNode(buttonNode.layerId, "click", "radius"),
+              yawPitchNode: getInteractionNode(buttonNode.layerId, "click", "yawpitch"),
+              cursorStyleNode: getInteractionNode(buttonNode.layerId, "click", "cursorstyle"),
             };
 
             function buildButtonVisualState(overrides = {}) {
@@ -7303,14 +9560,17 @@
               const resolvedTextBackgroundNode = overrides.textBackgroundNode || textBackgroundNode;
               const resolvedStrokeNode = overrides.strokeNode || strokeNode;
               const resolvedTextStrokeNode = overrides.textStrokeNode || textStrokeNode;
+              const resolvedTransparencyNode = overrides.transparencyNode || transparencyNode;
               const resolvedTextStyleNode = overrides.textStyleNode || textStyleNode;
               const resolvedShadowNode = overrides.shadowNode || shadowNode;
               const resolvedRadiusNode = overrides.radiusNode || radiusNode;
+              const resolvedYawPitchNode = overrides.yawPitchNode || yawPitchNode;
+              const resolvedCursorStyleNode = overrides.cursorStyleNode || cursorStyleNode;
 
               let width = 140;
               let height = 44;
               let fontSize = 15;
-              const buttonFill = buildColorFill(getResolvedColorFillData(resolvedColorNode));
+              const buttonFillState = buildPreviewFillState(getResolvedColorFillData(resolvedColorNode));
               const textColorData = resolvedTextColorNode
                 ? resolvedTextColorNode.data
                 : { mode: "solid", solid: "#ffffff" };
@@ -7323,6 +9583,16 @@
                 ? getRadiusNodeValues(resolvedRadiusNode.data)
                 : { tl: 8, tr: 8, br: 8, bl: 8 };
               const shadowCss = buildShadowCss(resolvedShadowNode ? resolvedShadowNode.data : null);
+              const fillOpacity = getTransparencyOpacityValue(resolvedTransparencyNode, "button");
+              const labelOpacity = getTransparencyOpacityValue(resolvedTransparencyNode, "text");
+              const textStrokeOpacity = getTransparencyOpacityValue(
+                resolvedTextStrokeNode ? getConnectedNode(resolvedTextStrokeNode, "transparency") : null,
+                null
+              );
+              const strokeOpacity = getTransparencyOpacityValue(
+                resolvedStrokeNode ? getConnectedNode(resolvedStrokeNode, "transparency") : null,
+                null
+              );
 
               if (resolvedScaleNode) {
                 if (resolvedScaleNode.data.target === "text") {
@@ -7403,13 +9673,14 @@
                 innerHeight || height,
                 fontSize,
                 textColorData,
-                resolvedTextBackgroundNode ? resolvedTextBackgroundNode.data : null
+                resolvedTextBackgroundNode ? resolvedTextBackgroundNode.data : null,
+                textStrokeOpacity
               );
 
               return {
                 leftStyle: `${leftPx}px`,
                 topStyle: `${topPx}px`,
-                transform: "",
+                transform: buildYawPitchTransform(resolvedYawPitchNode?.data),
                 animationData: animationNode ? normalizeAnimationConfig(animationNode.data) : null,
                 wrapperWidth,
                 wrapperHeight,
@@ -7421,18 +9692,31 @@
                 innerWidth,
                 innerHeight,
                 innerRadii,
-                buttonFill,
+                buttonFillState,
+                fillOpacity,
+                labelOpacity,
+                textStrokeOpacity,
+                strokeOpacity,
                 labelSvg,
+                cursor: resolvedCursorStyleNode?.data?.cursor || "pointer",
               };
             }
 
             const baseState = buildButtonVisualState();
             const hoverState = buildButtonVisualState(hoverOverrides);
             const clickState = buildButtonVisualState(clickOverrides);
+            buttonRenderEntries.push({
+              id: buttonNode.id,
+              layerId: buttonNode.layerId,
+              baseState,
+              hoverState,
+              clickState,
+            });
 
             return `
               <div
                 class="preview-btn-shell"
+                data-preview-node-id="${buttonNode.id}"
                 data-button-layer-id="${buttonNode.layerId}"
                 ${baseState.animationData ? `data-animation-config='${escapeHtml(JSON.stringify(baseState.animationData))}'` : ""}
                 data-base-state='${escapeHtml(JSON.stringify(baseState))}'
@@ -7449,23 +9733,24 @@
                   margin-top:${baseState.offsetMargin}px;
                   padding:${baseState.strokeWidth > 0 ? baseState.strokeWidth : 0}px;
                   border-radius:${radiusCss(baseState.outerRadii)};
-                  background:${baseState.strokeWidth > 0 ? baseState.strokeFill : "transparent"};
                   box-shadow:${baseState.shadowCss};
                 "
               >
+                <div class="preview-stroke-layer"></div>
                 <div
                   class="preview-btn"
                   style="
                     width:${baseState.innerWidth}px;
                     height:${baseState.innerHeight}px;
                     border-radius:${radiusCss(baseState.innerRadii)};
-                    background:${baseState.buttonFill};
                     display:flex;
                     align-items:center;
                     justify-content:center;
-                    overflow:hidden;
+                    position:relative;
                   "
                 >
+                  <div class="preview-shape-fill"></div>
+                  <div class="preview-fill-layer"><canvas class="preview-fill-canvas"></canvas><img class="preview-fill-image" alt="" decoding="async" loading="eager"></div>
                   <div class="preview-btn-label">${baseState.labelSvg}</div>
                 </div>
               </div>
@@ -7482,7 +9767,9 @@
             const textBackgroundNode = getConnectedNode(labelNode, "textBackground");
             const textStrokeNode = getConnectedNode(labelNode, "textStroke");
             const textStyleNode = getConnectedNode(labelNode, "textStyle");
+            const transparencyNode = getConnectedNode(labelNode, "transparency");
             const shadowNode = getConnectedNode(labelNode, "shadow");
+            const yawPitchNode = getConnectedNode(labelNode, "yawPitch");
             const hoverOverrides = {
               positionNode: getInteractionNode(labelNode.layerId, "hover", "position"),
               textAlignmentNode: getInteractionNode(labelNode.layerId, "hover", "textalignment"),
@@ -7491,7 +9778,9 @@
               textBackgroundNode: getInteractionNode(labelNode.layerId, "hover", "textbackground"),
               textStrokeNode: getInteractionNode(labelNode.layerId, "hover", "textstroke"),
               textStyleNode: getInteractionNode(labelNode.layerId, "hover", "textstyle"),
+              transparencyNode: getInteractionNode(labelNode.layerId, "hover", "transparency"),
               shadowNode: getInteractionNode(labelNode.layerId, "hover", "shadow"),
+              yawPitchNode: getInteractionNode(labelNode.layerId, "hover", "yawpitch"),
             };
             const clickOverrides = {
               positionNode: getInteractionNode(labelNode.layerId, "click", "position"),
@@ -7501,7 +9790,9 @@
               textBackgroundNode: getInteractionNode(labelNode.layerId, "click", "textbackground"),
               textStrokeNode: getInteractionNode(labelNode.layerId, "click", "textstroke"),
               textStyleNode: getInteractionNode(labelNode.layerId, "click", "textstyle"),
+              transparencyNode: getInteractionNode(labelNode.layerId, "click", "transparency"),
               shadowNode: getInteractionNode(labelNode.layerId, "click", "shadow"),
+              yawPitchNode: getInteractionNode(labelNode.layerId, "click", "yawpitch"),
             };
 
             function buildTextLabelState(overrides = {}) {
@@ -7512,7 +9803,9 @@
               const resolvedTextBackgroundNode = overrides.textBackgroundNode || textBackgroundNode;
               const resolvedTextStrokeNode = overrides.textStrokeNode || textStrokeNode;
               const resolvedTextStyleNode = overrides.textStyleNode || textStyleNode;
+              const resolvedTransparencyNode = overrides.transparencyNode || transparencyNode;
               const resolvedShadowNode = overrides.shadowNode || shadowNode;
+              const resolvedYawPitchNode = overrides.yawPitchNode || yawPitchNode;
               let fontSize = 28;
 
               if (resolvedScaleNode) {
@@ -7594,6 +9887,11 @@
                 ? resolvedTextColorNode.data
                 : { mode: "solid", solid: "#ffffff" };
               const textShadowCss = buildTextShadowCss(resolvedShadowNode ? resolvedShadowNode.data : null);
+              const textOpacity = getTransparencyOpacityValue(resolvedTransparencyNode, "text");
+              const textStrokeOpacity = getTransparencyOpacityValue(
+                resolvedTextStrokeNode ? getConnectedNode(resolvedTextStrokeNode, "transparency") : null,
+                null
+              );
               const labelHtml = richHtmlValue
                 ? renderRichTextLabelHtml(
                     richHtmlValue,
@@ -7620,7 +9918,8 @@
                     textShadowCss,
                     width,
                     resolvedTextBackgroundNode ? resolvedTextBackgroundNode.data : null,
-                    "Text Label"
+                    "Text Label",
+                    textStrokeOpacity
                   );
 
               return {
@@ -7629,17 +9928,26 @@
                 transform: `translate(${translateX}, ${translateY})`,
                 width,
                 height,
+                textOpacity,
                 labelHtml,
+                tiltTransform: buildYawPitchTransform(resolvedYawPitchNode?.data),
               };
             }
 
             const baseState = buildTextLabelState();
             const hoverState = buildTextLabelState(hoverOverrides);
             const clickState = buildTextLabelState(clickOverrides);
+            textRenderEntries.push({
+              id: labelNode.id,
+              baseState,
+              hoverState,
+              clickState,
+            });
 
             return `
               <div
                 class="preview-text-shell"
+                data-preview-node-id="${labelNode.id}"
                 data-base-state='${escapeHtml(JSON.stringify(baseState))}'
                 data-hover-state='${escapeHtml(JSON.stringify(hoverState))}'
                 data-click-state='${escapeHtml(JSON.stringify(clickState))}'
@@ -7662,14 +9970,18 @@
             const scaleNode = getConnectedNode(labelNode, "scale");
             const textColorNode = getConnectedNode(labelNode, "textColor");
             const textStyleNode = getConnectedNode(labelNode, "textStyle");
+            const transparencyNode = getConnectedNode(labelNode, "transparency");
             const shadowNode = getConnectedNode(labelNode, "shadow");
+            const yawPitchNode = getConnectedNode(labelNode, "yawPitch");
             const hoverOverrides = {
               positionNode: getInteractionNode(labelNode.layerId, "hover", "position"),
               textAlignmentNode: getInteractionNode(labelNode.layerId, "hover", "textalignment"),
               scaleNode: getInteractionNode(labelNode.layerId, "hover", "scale"),
               textColorNode: getInteractionNode(labelNode.layerId, "hover", "textcolor"),
               textStyleNode: getInteractionNode(labelNode.layerId, "hover", "textstyle"),
+              transparencyNode: getInteractionNode(labelNode.layerId, "hover", "transparency"),
               shadowNode: getInteractionNode(labelNode.layerId, "hover", "shadow"),
+              yawPitchNode: getInteractionNode(labelNode.layerId, "hover", "yawpitch"),
             };
             const clickOverrides = {
               positionNode: getInteractionNode(labelNode.layerId, "click", "position"),
@@ -7677,7 +9989,9 @@
               scaleNode: getInteractionNode(labelNode.layerId, "click", "scale"),
               textColorNode: getInteractionNode(labelNode.layerId, "click", "textcolor"),
               textStyleNode: getInteractionNode(labelNode.layerId, "click", "textstyle"),
+              transparencyNode: getInteractionNode(labelNode.layerId, "click", "transparency"),
               shadowNode: getInteractionNode(labelNode.layerId, "click", "shadow"),
+              yawPitchNode: getInteractionNode(labelNode.layerId, "click", "yawpitch"),
             };
 
             function buildRichTextLabelState(overrides = {}) {
@@ -7686,7 +10000,9 @@
               const resolvedScaleNode = overrides.scaleNode || scaleNode;
               const resolvedTextColorNode = overrides.textColorNode || textColorNode;
               const resolvedTextStyleNode = overrides.textStyleNode || textStyleNode;
+              const resolvedTransparencyNode = overrides.transparencyNode || transparencyNode;
               const resolvedShadowNode = overrides.shadowNode || shadowNode;
+              const resolvedYawPitchNode = overrides.yawPitchNode || yawPitchNode;
               let fontSize = 28;
 
               if (resolvedScaleNode?.data?.target === "text") {
@@ -7754,6 +10070,7 @@
                 ? resolvedTextColorNode.data
                 : { mode: "solid", solid: "#ffffff" };
               const textShadowCss = buildTextShadowCss(resolvedShadowNode ? resolvedShadowNode.data : null);
+              const textOpacity = getTransparencyOpacityValue(resolvedTransparencyNode, "text");
               const labelHtml = renderRichTextLabelHtml(
                 labelNode.data.html,
                 { ...(resolvedTextStyleNode ? resolvedTextStyleNode.data : {}), align: textAlign },
@@ -7770,17 +10087,26 @@
                 transform: `translate(${translateX}, ${translateY})`,
                 width,
                 height,
+                textOpacity,
                 labelHtml,
+                tiltTransform: buildYawPitchTransform(resolvedYawPitchNode?.data),
               };
             }
 
             const baseState = buildRichTextLabelState();
             const hoverState = buildRichTextLabelState(hoverOverrides);
             const clickState = buildRichTextLabelState(clickOverrides);
+            textRenderEntries.push({
+              id: labelNode.id,
+              baseState,
+              hoverState,
+              clickState,
+            });
 
             return `
               <div
                 class="preview-text-shell"
+                data-preview-node-id="${labelNode.id}"
                 data-base-state='${escapeHtml(JSON.stringify(baseState))}'
                 data-hover-state='${escapeHtml(JSON.stringify(hoverState))}'
                 data-click-state='${escapeHtml(JSON.stringify(clickState))}'
@@ -7806,6 +10132,7 @@
             const strokeNode = getConnectedNode(inputNode, "stroke");
             const textStrokeNode = getConnectedNode(inputNode, "textStroke");
             const textStyleNode = getConnectedNode(inputNode, "textStyle");
+            const transparencyNode = getConnectedNode(inputNode, "transparency");
             const shadowNode = getConnectedNode(inputNode, "shadow");
             const radiusNode = getConnectedNode(inputNode, "radius");
             const hoverOverrides = {
@@ -7817,6 +10144,7 @@
               strokeNode: getInteractionNode(inputNode.layerId, "hover", "stroke"),
               textStrokeNode: getInteractionNode(inputNode.layerId, "hover", "textstroke"),
               textStyleNode: getInteractionNode(inputNode.layerId, "hover", "textstyle"),
+              transparencyNode: getInteractionNode(inputNode.layerId, "hover", "transparency"),
               shadowNode: getInteractionNode(inputNode.layerId, "hover", "shadow"),
               radiusNode: getInteractionNode(inputNode.layerId, "hover", "radius"),
             };
@@ -7829,6 +10157,7 @@
               strokeNode: getInteractionNode(inputNode.layerId, "click", "stroke"),
               textStrokeNode: getInteractionNode(inputNode.layerId, "click", "textstroke"),
               textStyleNode: getInteractionNode(inputNode.layerId, "click", "textstyle"),
+              transparencyNode: getInteractionNode(inputNode.layerId, "click", "transparency"),
               shadowNode: getInteractionNode(inputNode.layerId, "click", "shadow"),
               radiusNode: getInteractionNode(inputNode.layerId, "click", "radius"),
             };
@@ -7842,6 +10171,7 @@
               const resolvedStrokeNode = overrides.strokeNode || strokeNode;
               const resolvedTextStrokeNode = overrides.textStrokeNode || textStrokeNode;
               const resolvedTextStyleNode = overrides.textStyleNode || textStyleNode;
+              const resolvedTransparencyNode = overrides.transparencyNode || transparencyNode;
               const resolvedShadowNode = overrides.shadowNode || shadowNode;
               const resolvedRadiusNode = overrides.radiusNode || radiusNode;
               let width = 220;
@@ -7874,6 +10204,16 @@
               const strokeInside = resolvedStrokeNode?.data.position === "inside";
               const strokeFill = buildColorFill(
                 resolvedStrokeNode ? resolvedStrokeNode.data : { mode: "solid", solid: "#b9c6e3" }
+              );
+              const fillOpacity = getTransparencyOpacityValue(resolvedTransparencyNode, "button");
+              const labelOpacity = getTransparencyOpacityValue(resolvedTransparencyNode, "text");
+              const textStrokeOpacity = getTransparencyOpacityValue(
+                resolvedTextStrokeNode ? getConnectedNode(resolvedTextStrokeNode, "transparency") : null,
+                null
+              );
+              const strokeOpacity = getTransparencyOpacityValue(
+                resolvedStrokeNode ? getConnectedNode(resolvedStrokeNode, "transparency") : null,
+                null
               );
               const radii = resolvedRadiusNode
                 ? getRadiusNodeValues(resolvedRadiusNode.data)
@@ -7925,7 +10265,8 @@
                 fontSize,
                 textColorData,
                 resolvedTextBackgroundNode ? resolvedTextBackgroundNode.data : null,
-                "Type here..."
+                "Type here...",
+                textStrokeOpacity
               );
 
               return {
@@ -7941,9 +10282,14 @@
                 innerWidth,
                 innerHeight,
                 innerRadii,
-                inputFill: buildColorFill(
-                  getResolvedColorFillData(resolvedColorNode) || { mode: "solid", solid: "#f7f8fb" }
+                inputFillState: buildPreviewFillState(
+                  getResolvedColorFillData(resolvedColorNode) || { mode: "solid", solid: "#f7f8fb" },
+                  "#f7f8fb"
                 ),
+                fillOpacity,
+                labelOpacity,
+                textStrokeOpacity,
+                strokeOpacity,
                 labelSvg,
               };
             }
@@ -7951,10 +10297,17 @@
             const baseState = buildInputState();
             const hoverState = buildInputState(hoverOverrides);
             const clickState = buildInputState(clickOverrides);
+            inputRenderEntries.push({
+              id: inputNode.id,
+              baseState,
+              hoverState,
+              clickState,
+            });
 
             return `
               <div
                 class="preview-input-shell"
+                data-preview-node-id="${inputNode.id}"
                 data-base-state='${escapeHtml(JSON.stringify(baseState))}'
                 data-hover-state='${escapeHtml(JSON.stringify(hoverState))}'
                 data-click-state='${escapeHtml(JSON.stringify(clickState))}'
@@ -7968,20 +10321,21 @@
                   margin-top:${baseState.offsetMargin}px;
                   padding:${baseState.strokeWidth > 0 ? baseState.strokeWidth : 0}px;
                   border-radius:${radiusCss(baseState.outerRadii)};
-                  background:${baseState.strokeWidth > 0 ? baseState.strokeFill : "transparent"};
                   box-shadow:${baseState.shadowCss};
                 "
               >
+                <div class="preview-stroke-layer"></div>
                 <div
                   class="preview-input"
                   style="
                     width:${baseState.innerWidth}px;
                     height:${baseState.innerHeight}px;
                     border-radius:${radiusCss(baseState.innerRadii)};
-                    background:${baseState.inputFill};
-                    overflow:hidden;
+                    position:relative;
                   "
                 >
+                  <div class="preview-shape-fill"></div>
+                  <div class="preview-fill-layer"><canvas class="preview-fill-canvas"></canvas><img class="preview-fill-image" alt="" decoding="async" loading="eager"></div>
                   <div class="preview-btn-label">${baseState.labelSvg}</div>
                 </div>
               </div>
@@ -7990,17 +10344,43 @@
           .join("");
 
         const previewMarkup = buttonMarkup + textLabelMarkup + richTextLabelMarkup + inputMarkup;
-        getPreviewTargets().forEach((target) => {
-          target.innerHTML = previewMarkup;
+        const previewSignature = JSON.stringify({
+          buttons: buttonRenderEntries.map((entry) => entry.id),
+          text: textRenderEntries.map((entry) => entry.id),
+          inputs: inputRenderEntries.map((entry) => entry.id),
+        });
+        renderTargets.forEach((target) => {
+          if (target.dataset.previewSignature !== previewSignature) {
+            target.innerHTML = previewMarkup;
+            target.dataset.previewSignature = previewSignature;
+          }
         });
 
-        for (const target of getPreviewTargets()) {
-          for (const shell of target.querySelectorAll(".preview-btn-shell")) {
+        for (const target of renderTargets) {
+          for (const entry of buttonRenderEntries) {
+            const shell = target.querySelector(`.preview-btn-shell[data-preview-node-id="${entry.id}"]`);
+            if (!shell) {
+              continue;
+            }
             const inner = shell.querySelector(".preview-btn");
+            const strokeLayer = shell.querySelector(".preview-stroke-layer");
+            const shapeFill = shell.querySelector(".preview-shape-fill");
+            const fillLayer = shell.querySelector(".preview-fill-layer");
+            const fillCanvas = shell.querySelector(".preview-fill-canvas");
+            const fillImage = shell.querySelector(".preview-fill-image");
             const label = shell.querySelector(".preview-btn-label");
-            const baseState = JSON.parse(shell.dataset.baseState);
-            const hoverState = JSON.parse(shell.dataset.hoverState);
-            const clickState = JSON.parse(shell.dataset.clickState);
+            const baseState = entry.baseState;
+            const hoverState = entry.hoverState;
+            const clickState = entry.clickState;
+            shell.dataset.buttonLayerId = entry.layerId || "";
+            shell.dataset.baseState = JSON.stringify(baseState);
+            shell.dataset.hoverState = JSON.stringify(hoverState);
+            shell.dataset.clickState = JSON.stringify(clickState);
+            if (baseState.animationData) {
+              shell.dataset.animationConfig = JSON.stringify(baseState.animationData);
+            } else {
+              shell.removeAttribute("data-animation-config");
+            }
 
             const applyState = (state) => {
               shell.style.left = state.leftStyle;
@@ -8008,135 +10388,293 @@
               shell.style.width = `${state.wrapperWidth}px`;
               shell.style.height = `${state.wrapperHeight}px`;
               shell.dataset.baseTransform = state.transform || "";
+              shell.style.transform = state.transform || "none";
+              shell.style.transformOrigin = "50% 50%";
               shell.style.marginLeft = `${state.offsetMargin}px`;
               shell.style.marginTop = `${state.offsetMargin}px`;
               shell.style.padding = `${state.strokeWidth > 0 ? state.strokeWidth : 0}px`;
               shell.style.borderRadius = radiusCss(state.outerRadii);
-              shell.style.background = state.strokeWidth > 0 ? state.strokeFill : "transparent";
+              shell.style.cursor = state.cursor || "pointer";
+              const nextShellBackground = state.strokeWidth > 0 ? state.strokeFill : "transparent";
+              shell.style.background = "transparent";
+              if (strokeLayer) {
+                if (strokeLayer._lastPreviewBackground !== nextShellBackground) {
+                  strokeLayer.style.background = nextShellBackground;
+                  strokeLayer._lastPreviewBackground = nextShellBackground;
+                }
+                strokeLayer.style.opacity = String(state.strokeOpacity);
+              }
               shell.style.boxShadow = state.shadowCss;
-
               inner.style.width = `${state.innerWidth}px`;
               inner.style.height = `${state.innerHeight}px`;
               inner.style.borderRadius = radiusCss(state.innerRadii);
-              inner.style.background = state.buttonFill;
+              inner.style.background = "transparent";
+              inner.style.cursor = state.cursor || "pointer";
+              if (shapeFill) {
+                if (shapeFill._lastPreviewBackground !== state.buttonFillState.background) {
+                  shapeFill.style.background = state.buttonFillState.background;
+                  shapeFill._lastPreviewBackground = state.buttonFillState.background;
+                }
+                shapeFill.style.opacity = String(state.fillOpacity);
+              }
+              if (fillLayer) {
+                fillLayer.style.display = state.buttonFillState.useImageElement ? "block" : "none";
+                fillLayer.style.opacity = String(state.fillOpacity);
+              }
+              const useCanvasFill = target === preview && state.buttonFillState.useImageElement;
+              if (fillCanvas) {
+                if (useCanvasFill) {
+                  drawPreviewImageToCanvas(fillCanvas, state.buttonFillState);
+                } else {
+                  fillCanvas.style.display = "none";
+                }
+              }
+              if (fillImage) {
+                if (state.buttonFillState.useImageElement) {
+                  if (useCanvasFill) {
+                    fillImage.style.display = "none";
+                    fillImage.style.visibility = "hidden";
+                  } else {
+                    if (fillImage._lastPreviewSrc !== state.buttonFillState.imageUrl) {
+                      fillImage.src = state.buttonFillState.imageUrl;
+                      fillImage._lastPreviewSrc = state.buttonFillState.imageUrl;
+                    }
+                    fillImage.style.objectFit = state.buttonFillState.objectFit;
+                    fillImage.style.objectPosition = state.buttonFillState.objectPosition;
+                    fillImage.style.display = "block";
+                    fillImage.style.visibility = "visible";
+                    fillImage.style.opacity = "1";
+                  }
+                } else {
+                  fillImage.style.display = "none";
+                  fillImage.style.visibility = "hidden";
+                }
+              }
               label.innerHTML = state.labelSvg;
+              label.style.opacity = String(state.labelOpacity);
+              label.style.transform = "none";
               applyPreviewButtonAnimation(shell, performance.now());
             };
 
-            let clickTimer = null;
-            shell.addEventListener("mouseenter", () => {
-              applyState(hoverState);
-            });
-            shell.addEventListener("mouseleave", () => {
-              if (clickTimer) {
-                clearTimeout(clickTimer);
-                clickTimer = null;
+            if (!shell._previewBound) {
+              shell._previewBound = true;
+              if (fillImage) {
+                fillImage.addEventListener("load", () => {
+                  forceSidePreviewRepaint();
+                });
+                fillImage.addEventListener("error", () => {
+                  forceSidePreviewRepaint();
+                });
               }
-              applyState(baseState);
-            });
-            shell.addEventListener("click", () => {
-              applyState(clickState);
-              if (clickTimer) {
-                clearTimeout(clickTimer);
-              }
-              clickTimer = setTimeout(() => {
-                applyState(baseState);
-                clickTimer = null;
-              }, 180);
-            });
+              shell.addEventListener("mouseenter", () => {
+                shell._applyPreviewState?.(shell._hoverPreviewState || shell._basePreviewState);
+              });
+              shell.addEventListener("mouseleave", () => {
+                if (shell._previewClickTimer) {
+                  clearTimeout(shell._previewClickTimer);
+                  shell._previewClickTimer = null;
+                }
+                shell._applyPreviewState?.(shell._basePreviewState);
+              });
+              shell.addEventListener("click", () => {
+                shell._applyPreviewState?.(shell._clickPreviewState || shell._basePreviewState);
+                if (shell._previewClickTimer) {
+                  clearTimeout(shell._previewClickTimer);
+                }
+                shell._previewClickTimer = setTimeout(() => {
+                  shell._applyPreviewState?.(shell._basePreviewState);
+                  shell._previewClickTimer = null;
+                }, 180);
+              });
+            }
+
+            shell._applyPreviewState = applyState;
+            shell._basePreviewState = baseState;
+            shell._hoverPreviewState = hoverState;
+            shell._clickPreviewState = clickState;
+            applyState(baseState);
+            inner.offsetHeight;
           }
         }
 
-        for (const target of getPreviewTargets()) {
-          for (const shell of target.querySelectorAll(".preview-text-shell")) {
-          const baseState = JSON.parse(shell.dataset.baseState);
-          const hoverState = JSON.parse(shell.dataset.hoverState);
-          const clickState = JSON.parse(shell.dataset.clickState);
-
-          const applyState = (state) => {
-            shell.style.left = state.leftStyle;
-            shell.style.top = state.topStyle;
-            shell.style.transform = state.transform || "translate(0, 0)";
-            shell.innerHTML = state.labelHtml;
-          };
-
-          let clickTimer = null;
-          shell.addEventListener("mouseenter", () => applyState(hoverState));
-          shell.addEventListener("mouseleave", () => {
-            if (clickTimer) {
-              clearTimeout(clickTimer);
-              clickTimer = null;
+        for (const target of renderTargets) {
+          for (const entry of textRenderEntries) {
+            const shell = target.querySelector(`.preview-text-shell[data-preview-node-id="${entry.id}"]`);
+            if (!shell) {
+              continue;
             }
+            const baseState = entry.baseState;
+            const hoverState = entry.hoverState;
+            const clickState = entry.clickState;
+            shell.dataset.baseState = JSON.stringify(baseState);
+            shell.dataset.hoverState = JSON.stringify(hoverState);
+            shell.dataset.clickState = JSON.stringify(clickState);
+
+            const applyState = (state) => {
+              shell.style.left = state.leftStyle;
+              shell.style.top = state.topStyle;
+              shell.style.transform = `${state.transform || "translate(0, 0)"} ${state.tiltTransform || ""}`.trim();
+              shell.style.transformOrigin = "50% 50%";
+              shell.style.opacity = String(state.textOpacity ?? 1);
+              shell.innerHTML = state.labelHtml;
+            };
+
+            if (!shell._previewBound) {
+              shell._previewBound = true;
+              shell.addEventListener("mouseenter", () => shell._applyPreviewState?.(shell._hoverPreviewState || shell._basePreviewState));
+              shell.addEventListener("mouseleave", () => {
+                if (shell._previewClickTimer) {
+                  clearTimeout(shell._previewClickTimer);
+                  shell._previewClickTimer = null;
+                }
+                shell._applyPreviewState?.(shell._basePreviewState);
+              });
+              shell.addEventListener("click", () => {
+                shell._applyPreviewState?.(shell._clickPreviewState || shell._basePreviewState);
+                if (shell._previewClickTimer) {
+                  clearTimeout(shell._previewClickTimer);
+                }
+                shell._previewClickTimer = setTimeout(() => {
+                  shell._applyPreviewState?.(shell._basePreviewState);
+                  shell._previewClickTimer = null;
+                }, 180);
+              });
+            }
+
+            shell._applyPreviewState = applyState;
+            shell._basePreviewState = baseState;
+            shell._hoverPreviewState = hoverState;
+            shell._clickPreviewState = clickState;
             applyState(baseState);
-          });
-          shell.addEventListener("click", () => {
-            applyState(clickState);
-            if (clickTimer) {
-              clearTimeout(clickTimer);
-            }
-            clickTimer = setTimeout(() => {
-              applyState(baseState);
-              clickTimer = null;
-            }, 180);
-          });
-        }
+          }
         }
 
-        for (const target of getPreviewTargets()) {
-          for (const shell of target.querySelectorAll(".preview-input-shell")) {
-          const inner = shell.querySelector(".preview-input");
-          const label = shell.querySelector(".preview-btn-label");
-          const baseState = JSON.parse(shell.dataset.baseState);
-          const hoverState = JSON.parse(shell.dataset.hoverState);
-          const clickState = JSON.parse(shell.dataset.clickState);
-
-          const applyState = (state) => {
-            shell.style.left = state.leftStyle;
-            shell.style.top = state.topStyle;
-            shell.style.width = `${state.wrapperWidth}px`;
-            shell.style.height = `${state.wrapperHeight}px`;
-            shell.style.marginLeft = `${state.offsetMargin}px`;
-            shell.style.marginTop = `${state.offsetMargin}px`;
-            shell.style.padding = `${state.strokeWidth > 0 ? state.strokeWidth : 0}px`;
-            shell.style.borderRadius = radiusCss(state.outerRadii);
-            shell.style.background = state.strokeWidth > 0 ? state.strokeFill : "transparent";
-            shell.style.boxShadow = state.shadowCss;
-            inner.style.width = `${state.innerWidth}px`;
-            inner.style.height = `${state.innerHeight}px`;
-            inner.style.borderRadius = radiusCss(state.innerRadii);
-            inner.style.background = state.inputFill;
-            label.innerHTML = state.labelSvg;
-          };
-
-          let clickTimer = null;
-          shell.addEventListener("mouseenter", () => applyState(hoverState));
-          shell.addEventListener("mouseleave", () => {
-            if (clickTimer) {
-              clearTimeout(clickTimer);
-              clickTimer = null;
+        for (const target of renderTargets) {
+          for (const entry of inputRenderEntries) {
+            const shell = target.querySelector(`.preview-input-shell[data-preview-node-id="${entry.id}"]`);
+            if (!shell) {
+              continue;
             }
+            const inner = shell.querySelector(".preview-input");
+            const strokeLayer = shell.querySelector(".preview-stroke-layer");
+            const shapeFill = shell.querySelector(".preview-shape-fill");
+            const fillLayer = shell.querySelector(".preview-fill-layer");
+            const fillCanvas = shell.querySelector(".preview-fill-canvas");
+            const fillImage = shell.querySelector(".preview-fill-image");
+            const label = shell.querySelector(".preview-btn-label");
+            const baseState = entry.baseState;
+            const hoverState = entry.hoverState;
+            const clickState = entry.clickState;
+            shell.dataset.baseState = JSON.stringify(baseState);
+            shell.dataset.hoverState = JSON.stringify(hoverState);
+            shell.dataset.clickState = JSON.stringify(clickState);
+
+            const applyState = (state) => {
+              shell.style.left = state.leftStyle;
+              shell.style.top = state.topStyle;
+              shell.style.width = `${state.wrapperWidth}px`;
+              shell.style.height = `${state.wrapperHeight}px`;
+              shell.style.marginLeft = `${state.offsetMargin}px`;
+              shell.style.marginTop = `${state.offsetMargin}px`;
+              shell.style.padding = `${state.strokeWidth > 0 ? state.strokeWidth : 0}px`;
+              shell.style.borderRadius = radiusCss(state.outerRadii);
+              const nextShellBackground = state.strokeWidth > 0 ? state.strokeFill : "transparent";
+              shell.style.background = "transparent";
+              if (strokeLayer) {
+                if (strokeLayer._lastPreviewBackground !== nextShellBackground) {
+                  strokeLayer.style.background = nextShellBackground;
+                  strokeLayer._lastPreviewBackground = nextShellBackground;
+                }
+                strokeLayer.style.opacity = String(state.strokeOpacity);
+              }
+              shell.style.boxShadow = state.shadowCss;
+              inner.style.width = `${state.innerWidth}px`;
+              inner.style.height = `${state.innerHeight}px`;
+              inner.style.borderRadius = radiusCss(state.innerRadii);
+              inner.style.background = "transparent";
+              if (shapeFill) {
+                if (shapeFill._lastPreviewBackground !== state.inputFillState.background) {
+                  shapeFill.style.background = state.inputFillState.background;
+                  shapeFill._lastPreviewBackground = state.inputFillState.background;
+                }
+                shapeFill.style.opacity = String(state.fillOpacity);
+              }
+              if (fillLayer) {
+                fillLayer.style.display = state.inputFillState.useImageElement ? "block" : "none";
+                fillLayer.style.opacity = String(state.fillOpacity);
+              }
+              const useCanvasFill = target === preview && state.inputFillState.useImageElement;
+              if (fillCanvas) {
+                if (useCanvasFill) {
+                  drawPreviewImageToCanvas(fillCanvas, state.inputFillState);
+                } else {
+                  fillCanvas.style.display = "none";
+                }
+              }
+              if (fillImage) {
+                if (state.inputFillState.useImageElement) {
+                  if (useCanvasFill) {
+                    fillImage.style.display = "none";
+                    fillImage.style.visibility = "hidden";
+                  } else {
+                    if (fillImage._lastPreviewSrc !== state.inputFillState.imageUrl) {
+                      fillImage.src = state.inputFillState.imageUrl;
+                      fillImage._lastPreviewSrc = state.inputFillState.imageUrl;
+                    }
+                    fillImage.style.objectFit = state.inputFillState.objectFit;
+                    fillImage.style.objectPosition = state.inputFillState.objectPosition;
+                    fillImage.style.display = "block";
+                    fillImage.style.visibility = "visible";
+                    fillImage.style.opacity = "1";
+                  }
+                } else {
+                  fillImage.style.display = "none";
+                  fillImage.style.visibility = "hidden";
+                }
+              }
+              label.innerHTML = state.labelSvg;
+              label.style.opacity = String(state.labelOpacity);
+            };
+
+            if (!shell._previewBound) {
+              shell._previewBound = true;
+              shell.addEventListener("mouseenter", () => shell._applyPreviewState?.(shell._hoverPreviewState || shell._basePreviewState));
+              shell.addEventListener("mouseleave", () => {
+                if (shell._previewClickTimer) {
+                  clearTimeout(shell._previewClickTimer);
+                  shell._previewClickTimer = null;
+                }
+                shell._applyPreviewState?.(shell._basePreviewState);
+              });
+              shell.addEventListener("click", () => {
+                shell._applyPreviewState?.(shell._clickPreviewState || shell._basePreviewState);
+                if (shell._previewClickTimer) {
+                  clearTimeout(shell._previewClickTimer);
+                }
+                shell._previewClickTimer = setTimeout(() => {
+                  shell._applyPreviewState?.(shell._basePreviewState);
+                  shell._previewClickTimer = null;
+                }, 180);
+              });
+            }
+
+            shell._applyPreviewState = applyState;
+            shell._basePreviewState = baseState;
+            shell._hoverPreviewState = hoverState;
+            shell._clickPreviewState = clickState;
             applyState(baseState);
-          });
-          shell.addEventListener("click", () => {
-            applyState(clickState);
-            if (clickTimer) {
-              clearTimeout(clickTimer);
-            }
-            clickTimer = setTimeout(() => {
-              applyState(baseState);
-              clickTimer = null;
-            }, 180);
-          });
-        }
+          }
         }
 
-        getPreviewTargets().forEach((target) => {
+        renderTargets.forEach((target) => {
           for (const shell of target.querySelectorAll(".preview-btn-shell[data-animation-config]")) {
             shell.dataset.animationStartMs = String(performance.now());
           }
         });
 
+        forceSidePreviewRepaint();
         startPreviewAnimations();
+        syncImportEditorFromGraph();
       }
 
       function nextSpawnPosition(type) {
@@ -8160,6 +10698,7 @@
           input: { x: 340, y: 160 },
           position: { x: 70, y: 110 },
           textposition: { x: 340, y: 330 },
+          yawpitch: { x: 620, y: 330 },
           textalignment: { x: 340, y: 540 },
           animation: { x: 340, y: 980 },
           scale: { x: 70, y: 330 },
@@ -8168,8 +10707,10 @@
           textbackground: { x: 340, y: 760 },
           stroke: { x: 70, y: 980 },
           textstroke: { x: 70, y: 1180 },
+          transparency: { x: 340, y: 1380 },
           shadow: { x: 340, y: 980 },
           radius: { x: 340, y: 1180 },
+          cursorstyle: { x: 70, y: 1380 },
           background: { x: 340, y: 160 },
         }[type] || { x: 120, y: 120 };
         const visible = getVisibleWorldRect();
@@ -8202,22 +10743,11 @@
 
       function spawnLibraryNode(type) {
         const spawnPos = nextSpawnPosition(type);
-        const rootTypeLabel = {
-          button: "Button",
-          buttonsc: "Button SC",
-          textlabel: "Text Label",
-          richtextlabel: "Rich Text Label",
-          input: "Input",
-        }[type];
+        const spawnData = type === "transparency" ? { target: getDefaultTransparencyTarget() } : {};
+        const rootTypeLabel = getNodeLabel(type);
 
         if (isButtonRootType(type)) {
-          const layer = createLayer(rootTypeLabel);
-          activeLayerId = layer.id;
-          activeInteractionKind = null;
-          updateLayerControls();
-          makeNode(type, spawnPos.x, spawnPos.y, {}, layer.id, null);
-          updateLayerControls();
-          rerenderCanvas();
+          const { layer } = spawnRootLayerNode(type, spawnPos.x, spawnPos.y, {}, rootTypeLabel);
           showStatus(`${rootTypeLabel || layer.name} created`);
           return true;
         }
@@ -8241,7 +10771,7 @@
           type,
           spawnPos.x,
           spawnPos.y,
-          {},
+          spawnData,
           type === "background" ? null : activeLayerId,
           type === "background" ? null : activeInteractionKind
         );
@@ -8418,12 +10948,38 @@
           const sortMode = nodeSearchSort.value;
           const matches = fullNodeCatalog.filter(
             (node) =>
-              node.label.toLowerCase().includes(query) &&
+              (
+                node.label.toLowerCase().includes(query) ||
+                node.description.toLowerCase().includes(query)
+              ) &&
               (categoryFilter === "all" || node.category === categoryFilter)
           );
+          const getNodeSearchPriority = (node) => {
+            if (!query) {
+              return 0;
+            }
+            const labelMatch = node.label.toLowerCase().includes(query);
+            const descriptionMatch = node.description.toLowerCase().includes(query);
+            if (labelMatch && descriptionMatch) {
+              return 0;
+            }
+            if (labelMatch) {
+              return 1;
+            }
+            if (descriptionMatch) {
+              return 2;
+            }
+            return 3;
+          };
 
           if (sortMode === "name") {
-            matches.sort((a, b) => a.label.localeCompare(b.label));
+            matches.sort((a, b) => {
+              const priorityDiff = getNodeSearchPriority(a) - getNodeSearchPriority(b);
+              if (priorityDiff !== 0) {
+                return priorityDiff;
+              }
+              return a.label.localeCompare(b.label);
+            });
             nodeSearchResults.innerHTML = `
               <div class="node-search-group">
                 <div class="node-search-group-title">All Results</div>
@@ -8432,7 +10988,10 @@
                     (node) => `
                       <button class="node-search-item" type="button" data-node-type="${node.type}">
                         <span class="mini-dot dot-${node.type}"></span>
-                        <span>${escapeHtml(node.label)}</span>
+                          <span class="node-search-item-copy">
+                          <span class="node-search-item-label">${highlightSearchMatch(node.label, query)}</span>
+                          <span class="node-search-item-description">${highlightSearchMatch(node.description, query)}</span>
+                        </span>
                       </button>
                     `
                   )
@@ -8454,12 +11013,21 @@
                   <div class="node-search-group">
                     <div class="node-search-group-title">${escapeHtml(category)}</div>
                     ${nodes
-                      .sort((a, b) => a.label.localeCompare(b.label))
+                      .sort((a, b) => {
+                        const priorityDiff = getNodeSearchPriority(a) - getNodeSearchPriority(b);
+                        if (priorityDiff !== 0) {
+                          return priorityDiff;
+                        }
+                        return a.label.localeCompare(b.label);
+                      })
                       .map(
                         (node) => `
                           <button class="node-search-item" type="button" data-node-type="${node.type}">
                             <span class="mini-dot dot-${node.type}"></span>
-                            <span>${escapeHtml(node.label)}</span>
+                            <span class="node-search-item-copy">
+                              <span class="node-search-item-label">${highlightSearchMatch(node.label, query)}</span>
+                              <span class="node-search-item-description">${highlightSearchMatch(node.description, query)}</span>
+                            </span>
                           </button>
                         `
                       )
@@ -8539,6 +11107,17 @@
         });
 
         document.addEventListener("mousedown", (e) => {
+          if (!helpModal.hidden) {
+            if (helpCloseBtn.contains(e.target) || helpToggleBtn.contains(e.target)) {
+              return;
+            }
+            const helpDialog = helpModal.querySelector(".help-dialog");
+            if (helpDialog && helpDialog.contains(e.target)) {
+              return;
+            }
+            closeHelpModal();
+            return;
+          }
           if (nodeSearchModal.hidden) {
             return;
           }
@@ -8571,6 +11150,10 @@
         });
 
         window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !helpModal.hidden) {
+            closeHelpModal();
+            return;
+          }
           if (e.key === "Escape" && !textRichEditorModal.hidden) {
             closeTextRichEditor();
           }
@@ -8620,6 +11203,77 @@
             item.dataset.layerId,
             item.dataset.interactionKind || null
           );
+        });
+      }
+
+      function clampSidebarSplit(nextHeight) {
+        const minPanelHeight = 120;
+        const headerHeight = document.querySelector(".sidebar-header")?.offsetHeight || 34;
+        const dividerHeight = sidebarDivider?.offsetHeight || 12;
+        const sidebarHeight = sidebar?.clientHeight || 0;
+        const maxHeight = Math.max(
+          minPanelHeight,
+          sidebarHeight - headerHeight - dividerHeight - minPanelHeight
+        );
+        return Math.max(minPanelHeight, Math.min(nextHeight, maxHeight));
+      }
+
+      function setSidebarSplit(nextHeight) {
+        if (!sidebar) {
+          return;
+        }
+        sidebar.style.setProperty("--sidebar-split", `${clampSidebarSplit(nextHeight)}px`);
+      }
+
+      function setupSidebarResizer() {
+        if (!sidebar || !nodeList || !sidebarDivider || !layerPanel) {
+          return;
+        }
+
+        setSidebarSplit(nodeList.offsetHeight || 320);
+
+        sidebarDivider.addEventListener("pointerdown", (e) => {
+          if (e.button !== 0) {
+            return;
+          }
+          e.preventDefault();
+          sidebarResizeState = {
+            startY: e.clientY,
+            startHeight: nodeList.getBoundingClientRect().height,
+          };
+          sidebarDivider.classList.add("is-dragging");
+          document.body.classList.add("sidebar-resizing");
+          sidebarDivider.setPointerCapture?.(e.pointerId);
+        });
+
+        sidebarDivider.addEventListener("pointermove", (e) => {
+          if (!sidebarResizeState) {
+            return;
+          }
+          const deltaY = e.clientY - sidebarResizeState.startY;
+          setSidebarSplit(sidebarResizeState.startHeight + deltaY);
+        });
+
+        const stopSidebarResize = (pointerId) => {
+          if (!sidebarResizeState) {
+            return;
+          }
+          sidebarResizeState = null;
+          sidebarDivider.classList.remove("is-dragging");
+          document.body.classList.remove("sidebar-resizing");
+          if (pointerId !== undefined) {
+            try {
+              sidebarDivider.releasePointerCapture?.(pointerId);
+            } catch {}
+          }
+        };
+
+        sidebarDivider.addEventListener("pointerup", (e) => {
+          stopSidebarResize(e.pointerId);
+        });
+
+        sidebarDivider.addEventListener("pointercancel", (e) => {
+          stopSidebarResize(e.pointerId);
         });
       }
 
@@ -8704,6 +11358,18 @@
         showStatus("Centered");
       });
 
+      helpToggleBtn.addEventListener("click", () => {
+        if (helpModal.hidden) {
+          openHelpModal();
+        } else {
+          closeHelpModal();
+        }
+      });
+
+      helpCloseBtn.addEventListener("click", closeHelpModal);
+      helpBackToTopBtn.addEventListener("click", scrollHelpToTop);
+      helpContent.addEventListener("scroll", updateHelpBackToTopVisibility);
+
       editorTabBtn.addEventListener("click", () => {
         activeCenterTab = "editor";
         syncCenterTabState();
@@ -8712,6 +11378,59 @@
       previewTabBtn.addEventListener("click", () => {
         activeCenterTab = "preview";
         syncCenterTabState();
+      });
+
+      importTabBtn.addEventListener("click", () => {
+        activeCenterTab = "import";
+        syncCenterTabState();
+        importEditor.focus();
+      });
+
+      importApplyBtn.addEventListener("click", () => {
+        applyImportEditorValue();
+      });
+
+      importCopyCurrentBtn.addEventListener("click", async () => {
+        try {
+          const nextText = formatGraphStateForImport();
+          await copyTextToClipboard(nextText);
+          setImportStatus("Current graph code copied.", "success");
+          showStatus("Current graph copied");
+        } catch {
+          setImportStatus("Could not copy the current graph code.", "error");
+        }
+      });
+
+      importCopyEditorBtn.addEventListener("click", async () => {
+        try {
+          await copyTextToClipboard(importEditor.value);
+          setImportStatus("Editor code copied.", "success");
+          showStatus("Editor code copied");
+        } catch {
+          setImportStatus("Could not copy the editor code.", "error");
+        }
+      });
+
+      importEditor.addEventListener("input", () => {
+        renderImportEditorHighlight();
+        renderImportEditorGutter();
+        updateImportLineCount();
+        updateImportEditorActiveLine();
+        setImportStatus("Waiting for valid JSON to auto-apply...", "");
+        clearTimeout(importSyncTimeout);
+        importSyncTimeout = setTimeout(() => {
+          applyImportEditorValue();
+        }, 450);
+      });
+
+      importEditor.addEventListener("scroll", syncImportEditorScroll);
+      importEditor.addEventListener("click", () => {
+        renderImportEditorGutter();
+        updateImportEditorActiveLine();
+      });
+      importEditor.addEventListener("keyup", () => {
+        renderImportEditorGutter();
+        updateImportEditorActiveLine();
       });
 
       previewDeviceSelect?.addEventListener("change", () => {
@@ -8733,6 +11452,9 @@
       });
 
       window.addEventListener("resize", () => {
+        if (sidebar) {
+          setSidebarSplit(nodeList.getBoundingClientRect().height);
+        }
         syncPreviewViewportFrames();
         updatePreview();
       });
@@ -8760,6 +11482,7 @@
       loadAvailableFonts();
       resetGraph();
       setupSidebar();
+      setupSidebarResizer();
       setupCanvasViewport();
       setupConnectSpawnMenu();
       if (previewDeviceSelect) {
